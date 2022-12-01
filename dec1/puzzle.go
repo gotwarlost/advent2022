@@ -47,16 +47,15 @@ func topN(sortedElves []elf, n int) int {
 	return total
 }
 
-func Run(testMode bool) {
-	var input string
-	if testMode {
-		input = testInput
-	} else {
-		input = actualInput
-	}
+func run(input string) (top, top3 int) {
 	input = strings.TrimSpace(input)
 	elfBlocks := strings.Split(input, "\n\n")
 	elves := findElvesByCaloriesDesc(elfBlocks)
-	fmt.Println("TOP 1:", topN(elves, 1))
-	fmt.Println("TOP 3:", topN(elves, 3))
+	return topN(elves, 1), topN(elves, 3)
+}
+
+func Run() {
+	t1, t3 := run(actualInput)
+	fmt.Println("TOP 1:", t1)
+	fmt.Println("TOP 3:", t3)
 }
