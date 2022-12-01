@@ -11,9 +11,6 @@ import (
 //go:embed input.txt
 var actualInput string
 
-//go:embed test-input.txt
-var testInput string
-
 type elf struct {
 	number   int
 	calories int
