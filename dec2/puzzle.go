@@ -121,18 +121,6 @@ var opponentMap = map[string]thing{
 	"C": scissors,
 }
 
-var myMap = map[string]thing{
-	"X": rock,
-	"Y": paper,
-	"Z": scissors,
-}
-
-var outcomeMap = map[string]outcome{
-	"X": loss,
-	"Y": draw,
-	"Z": win,
-}
-
 type turn struct {
 	opponent string
 	second   string
@@ -156,6 +144,11 @@ func toTurns(in string) []turn {
 }
 
 func runPart1(in string) int {
+	myMap := map[string]thing{
+		"X": rock,
+		"Y": paper,
+		"Z": scissors,
+	}
 	turns := toTurns(in)
 	var score int
 	for _, t := range turns {
@@ -171,6 +164,11 @@ func runPart1(in string) int {
 }
 
 func runPart2(in string) int {
+	outcomeMap := map[string]outcome{
+		"X": loss,
+		"Y": draw,
+		"Z": win,
+	}
 	turns := toTurns(in)
 	var score int
 	for _, t := range turns {
