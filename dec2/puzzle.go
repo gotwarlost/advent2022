@@ -135,14 +135,14 @@ var outcomeMap = map[string]outcome{
 
 type turn struct {
 	opponent string
-	me       string
+	second   string
 }
 
 func RunPart1() {
 	fmt.Println(runPart1(input))
 }
 
-func runPart1(in string) int {
+func toTurns(in string) []turn {
 	lines := strings.Split(strings.TrimSpace(in), "\n")
 	var turns []turn
 	for _, line := range lines {
@@ -150,15 +150,19 @@ func runPart1(in string) int {
 		if len(parts) != 2 {
 			panic(fmt.Errorf("invalid line: %q", line))
 		}
-		turns = append(turns, turn{opponent: parts[0], me: parts[1]})
+		turns = append(turns, turn{opponent: parts[0], second: parts[1]})
 	}
+	return turns
+}
 
+func runPart1(in string) int {
+	turns := toTurns(in)
 	var score int
 	for _, t := range turns {
 		theirs := opponentMap[t.opponent]
-		ours := myMap[t.me]
+		ours := myMap[t.second]
 		if theirs == 0 || ours == 0 {
-			panic(fmt.Errorf("problem: them %q, me %q", t.opponent, t.me))
+			panic(fmt.Errorf("problem: them %q, me %q", t.opponent, t.second))
 		}
 		o := ours.outcome(theirs)
 		score += o.score() + ours.score()
@@ -167,22 +171,13 @@ func runPart1(in string) int {
 }
 
 func runPart2(in string) int {
-	lines := strings.Split(strings.TrimSpace(in), "\n")
-	var turns []turn
-	for _, line := range lines {
-		parts := strings.Split(line, " ")
-		if len(parts) != 2 {
-			panic(fmt.Errorf("invalid line: %q", line))
-		}
-		turns = append(turns, turn{opponent: parts[0], me: parts[1]})
-	}
-
+	turns := toTurns(in)
 	var score int
 	for _, t := range turns {
 		theirs := opponentMap[t.opponent]
-		o := outcomeMap[t.me]
+		o := outcomeMap[t.second]
 		if theirs == 0 || o == 0 {
-			panic(fmt.Errorf("problem: them %q, me %q", t.opponent, t.me))
+			panic(fmt.Errorf("problem: them %q, outcome %q", t.opponent, t.second))
 		}
 		us := theirs.opponentFromOutcome(o)
 		score += o.score() + us.score()
