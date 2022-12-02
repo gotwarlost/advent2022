@@ -11,6 +11,7 @@ var input string
 
 type thing int
 
+// things we need - enum value is the score
 const (
 	_ thing = iota
 	rock
@@ -20,12 +21,8 @@ const (
 
 func (t thing) score() int {
 	switch t {
-	case rock:
-		return 1
-	case paper:
-		return 2
-	case scissors:
-		return 3
+	case rock, paper, scissors:
+		return int(t)
 	default:
 		panic(fmt.Errorf("invalid thing %d", t))
 	}
@@ -45,21 +42,17 @@ func (t thing) String() string {
 
 type outcome int
 
+// outcomes - enum value is score + 1
 const (
-	_ outcome = iota
-	win
-	loss
-	draw
+	win  outcome = 7
+	loss outcome = 1
+	draw outcome = 4
 )
 
 func (o outcome) score() int {
 	switch o {
-	case win:
-		return 6
-	case loss:
-		return 0
-	case draw:
-		return 3
+	case win, loss, draw:
+		return int(o) - 1
 	default:
 		panic(fmt.Errorf("invalid outcome %d", o))
 	}
