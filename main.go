@@ -5,12 +5,15 @@ import (
 	"os"
 
 	"cd.splunkdev.com/kanantheswaran/advent2022/dec1"
+	"cd.splunkdev.com/kanantheswaran/advent2022/dec2"
 )
 
 type puzzle func()
 
 var puzzles = map[string]puzzle{
-	"dec1": dec1.Run,
+	"dec1":    dec1.Run,
+	"dec2-p1": dec2.RunPart1,
+	"dec2-p2": dec2.RunPart2,
 }
 
 func main() {
