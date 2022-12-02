@@ -179,8 +179,8 @@ func runPart2(in string) int {
 		if theirs == 0 || o == 0 {
 			panic(fmt.Errorf("problem: them %q, outcome %q", t.opponent, t.second))
 		}
-		us := theirs.opponentFromOutcome(o)
-		score += o.score() + us.score()
+		ours := theirs.opponentFromOutcome(o)
+		score += o.score() + ours.score()
 	}
 	return score
 }
