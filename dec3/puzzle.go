@@ -60,11 +60,7 @@ func runPart1(in string) int {
 		second := line[l/2:]
 		s1 := toSet(first)
 		s2 := toSet(second)
-		x := intersection(s1, s2)
-		if len(x) > 1 {
-			panic("more than one element found in intersection")
-		}
-		output += score(extractSingleValue(x))
+		output += score(extractSingleValue(intersection(s1, s2)))
 	}
 	return output
 }
@@ -79,11 +75,7 @@ func runPart2(in string) int {
 		s1 := toSet(lines[i])
 		s2 := toSet(lines[i+1])
 		s3 := toSet(lines[i+2])
-		x := intersection(intersection(s1, s2), s3)
-		if len(x) > 1 {
-			panic("more than one element found in intersection")
-		}
-		output += score(extractSingleValue(x))
+		output += score(extractSingleValue(intersection(intersection(s1, s2), s3)))
 	}
 	return output
 }
