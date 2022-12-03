@@ -30,6 +30,17 @@ func intersection(s1, s2 map[byte]bool) map[byte]bool {
 	return out
 }
 
+func extractSingleValue(s map[byte]bool) byte {
+	if len(s) > 1 {
+		panic("more than one element found in intersection")
+	}
+	var out byte
+	for k := range s {
+		out = k
+	}
+	return out
+}
+
 func score(s byte) int {
 	if s >= 'a' && s <= 'z' {
 		return 1 + int(s-'a')
@@ -53,11 +64,7 @@ func runPart1(in string) int {
 		if len(x) > 1 {
 			panic("more than one element found in intersection")
 		}
-		var el byte
-		for k := range x {
-			el = k
-		}
-		output += score(el)
+		output += score(extractSingleValue(x))
 	}
 	return output
 }
@@ -76,11 +83,7 @@ func runPart2(in string) int {
 		if len(x) > 1 {
 			panic("more than one element found in intersection")
 		}
-		var el byte
-		for k := range x {
-			el = k
-		}
-		output += score(el)
+		output += score(extractSingleValue(x))
 	}
 	return output
 }
