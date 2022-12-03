@@ -9,16 +9,16 @@ import (
 //go:embed input.txt
 var input string
 
-func toSet(word string) map[string]bool {
-	ret := map[string]bool{}
+func toSet(word string) map[byte]bool {
+	ret := map[byte]bool{}
 	for i := 0; i < len(word); i++ {
-		ret[word[i:i+1]] = true
+		ret[word[i]] = true
 	}
 	return ret
 }
 
-func intersection(s1, s2 map[string]bool) map[string]bool {
-	out := map[string]bool{}
+func intersection(s1, s2 map[byte]bool) map[byte]bool {
+	out := map[byte]bool{}
 	for k := range s1 {
 		if s2[k] {
 			out[k] = true
@@ -53,11 +53,11 @@ func runPart1(in string) int {
 		if len(x) > 1 {
 			panic("more than one element found in intersection")
 		}
-		var el string
+		var el byte
 		for k := range x {
 			el = k
 		}
-		output += score(el[0])
+		output += score(el)
 	}
 	return output
 }
@@ -76,11 +76,11 @@ func runPart2(in string) int {
 		if len(x) > 1 {
 			panic("more than one element found in intersection")
 		}
-		var el string
+		var el byte
 		for k := range x {
 			el = k
 		}
-		output += score(el[0])
+		output += score(el)
 	}
 	return output
 }
