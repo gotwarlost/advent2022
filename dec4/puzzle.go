@@ -23,9 +23,8 @@ func (a assigment) overlaps(other assigment) bool {
 	if a.contains(other) {
 		return true
 	}
-	ret := (a.min >= other.min && a.min <= other.max) ||
+	return (a.min >= other.min && a.min <= other.max) ||
 		(a.max >= other.min && a.max <= other.max)
-	return ret
 }
 
 func parsePart(s string) assigment {
