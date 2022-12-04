@@ -3,7 +3,6 @@ package dec4
 import (
 	_ "embed"
 	"fmt"
-	"log"
 	"strconv"
 	"strings"
 )
@@ -56,7 +55,6 @@ func runPart1(in string) int {
 		a1 := parsePart(parts[0])
 		a2 := parsePart(parts[1])
 		if a1.contains(a2) || a2.contains(a1) {
-			log.Println("OVERLAP:", line)
 			count++
 		}
 	}
