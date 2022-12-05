@@ -78,9 +78,9 @@ func runPart2(in string) int {
 }
 
 func RunPart1() {
-	fmt.Println("Score:", runPart1(input))
+	fmt.Println("Output:", runPart1(input))
 }
 
 func RunPart2() {
-	fmt.Println("Score:", runPart2(input))
+	fmt.Println("Output:", runPart2(input))
 }
