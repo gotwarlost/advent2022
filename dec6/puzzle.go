@@ -17,21 +17,21 @@ func hasDistinctChars(s string) bool {
 	return len(m) == len(s)
 }
 
-func nonrepeatingChars(in string, seq int) int {
+func nonRepeatingChars(in string, window int) int {
 	in = strings.TrimSpace(in)
-	for i := 0; i < len(in)-seq-1; i++ {
-		s := in[i : i+seq]
+	for i := 0; i < len(in)-window-1; i++ {
+		s := in[i : i+window]
 		if hasDistinctChars(s) {
-			return i + seq
+			return i + window
 		}
 	}
 	panic("not found")
 }
 
 func RunPart1() {
-	fmt.Println("Output:", nonrepeatingChars(input, 4))
+	fmt.Println("Output:", nonRepeatingChars(input, 4))
 }
 
 func RunPart2() {
-	fmt.Println("Output:", nonrepeatingChars(input, 14))
+	fmt.Println("Output:", nonRepeatingChars(input, 14))
 }
