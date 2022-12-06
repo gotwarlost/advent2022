@@ -3,62 +3,35 @@ package dec6
 import (
 	_ "embed"
 	"fmt"
-	"log"
-	"strconv"
 	"strings"
 )
 
 //go:embed input.txt
 var input string
 
-// run computes how many characters need to be seen in a line before `seq` distinct characters are found.
-// input can be a set of lines structured as "<string> <expected-value>" or a single string with no expected value.
-func run(in string, seq int) int {
-	lines := strings.Split(strings.TrimSpace(in), "\n")
-	var last int
-	for n, line := range lines {
-		parts := strings.SplitN(line, " ", 2)
-		var input string
-		var expected int
-		var err error
-		if len(parts) == 2 {
-			input = parts[0]
-			expected, err = strconv.Atoi(parts[1])
-			if err != nil {
-				panic(err)
-			}
-		} else {
-			input = parts[0]
-			expected = -1
-		}
-		out := -1
-		for i := 0; i < len(input)-seq-1; i++ {
-			s := input[i : i+seq]
-			m := map[byte]bool{}
-			for _, b := range []byte(s) {
-				m[b] = true
-			}
-			if len(m) == seq {
-				out = i + seq
-				break
-			}
-		}
-		if out == -1 {
-			panic("not found")
-		}
-		if expected != -1 && out != expected {
-			panic(fmt.Errorf("want %d, got %d", expected, out))
-		}
-		log.Println("line", n+1, ":", out)
-		last = out
+func hasDistinctChars(s string) bool {
+	m := map[byte]bool{}
+	for _, b := range []byte(s) {
+		m[b] = true
 	}
-	return last
+	return len(m) == len(s)
+}
+
+func nonrepeatingChars(in string, seq int) int {
+	in = strings.TrimSpace(in)
+	for i := 0; i < len(in)-seq-1; i++ {
+		s := in[i : i+seq]
+		if hasDistinctChars(s) {
+			return i + seq
+		}
+	}
+	panic("not found")
 }
 
 func RunPart1() {
-	fmt.Println("Output:", run(input, 4))
+	fmt.Println("Output:", nonrepeatingChars(input, 4))
 }
 
 func RunPart2() {
-	fmt.Println("Output:", run(input, 14))
+	fmt.Println("Output:", nonrepeatingChars(input, 14))
 }
