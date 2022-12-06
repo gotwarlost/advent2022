@@ -9,20 +9,51 @@ import (
 //go:embed input.txt
 var input string
 
-func hasDistinctChars(s string) bool {
-	m := map[byte]bool{}
-	for _, b := range []byte(s) {
-		m[b] = true
+type uniqueWindowChecker struct {
+	size int
+	seen map[byte]int
+}
+
+func newUniqueWindowChecker(initial string) *uniqueWindowChecker {
+	seen := map[byte]int{}
+	for _, b := range []byte(initial) {
+		seen[b]++
 	}
-	return len(m) == len(s)
+	return &uniqueWindowChecker{
+		size: len(initial),
+		seen: seen,
+	}
+}
+
+func (u *uniqueWindowChecker) replace(src, dest byte) {
+	n := u.seen[src]
+	if n == 0 {
+		panic("precondition failed")
+	}
+	n--
+	if n == 0 {
+		delete(u.seen, src)
+	} else {
+		u.seen[src] = n
+	}
+	u.seen[dest]++
+}
+
+func (u *uniqueWindowChecker) isUnique() bool {
+	return len(u.seen) == u.size
 }
 
 func nonRepeatingChars(in string, window int) int {
 	in = strings.TrimSpace(in)
-	for i := 0; i < len(in)-window-1; i++ {
-		s := in[i : i+window]
-		if hasDistinctChars(s) {
-			return i + window
+	initial := in[:window]
+	uc := newUniqueWindowChecker(initial)
+	if uc.isUnique() {
+		return window
+	}
+	for i := window; i < len(in); i++ {
+		uc.replace(in[i-window], in[i])
+		if uc.isUnique() {
+			return i + 1
 		}
 	}
 	panic("not found")
