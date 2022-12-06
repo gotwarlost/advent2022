@@ -11,6 +11,8 @@ import (
 //go:embed input.txt
 var input string
 
+// run computes how many characters need to be seen in a line before `seq` distinct characters are found.
+// input can be a set of lines structured as "<string> <expected-value>" or a single string with no expected value.
 func run(in string, seq int) int {
 	lines := strings.Split(strings.TrimSpace(in), "\n")
 	var last int
