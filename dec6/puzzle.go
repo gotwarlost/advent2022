@@ -9,11 +9,16 @@ import (
 //go:embed input.txt
 var input string
 
+// uniqueWindowChecker maintains counts of letters seen in a map
+// ensuring that when a count drops to 0 the entry is removed.
+// Thus, checks for unique of all entries in flight is a simple
+// comparison between window size and the size of the map.
 type uniqueWindowChecker struct {
 	size int
 	seen map[byte]int
 }
 
+// newUniqueWindowChecker sets up a window checker with bytes from the initial window.
 func newUniqueWindowChecker(initial string) *uniqueWindowChecker {
 	seen := map[byte]int{}
 	for _, b := range []byte(initial) {
@@ -25,6 +30,7 @@ func newUniqueWindowChecker(initial string) *uniqueWindowChecker {
 	}
 }
 
+// replace a character previously added with one the now needs to be added.
 func (u *uniqueWindowChecker) replace(src, dest byte) {
 	n := u.seen[src]
 	if n == 0 {
