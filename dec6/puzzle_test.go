@@ -10,17 +10,43 @@ import (
 var _ = assert.Equal
 
 func TestPuzzleP1(t *testing.T) {
-	assert.Equal(t, 7, nonRepeatingChars("mjqjpqmgbljsphdztnvjfqwrcgsmlb", 4))
-	assert.Equal(t, 5, nonRepeatingChars("bvwbjplbgvbhsrlpgdmjqwftvncz", 4))
-	assert.Equal(t, 6, nonRepeatingChars("nppdvjthqldpwncqszvftbrmjlhg", 4))
-	assert.Equal(t, 10, nonRepeatingChars("nznrnfrfntjfmvfwmzdfjlvtqnbhcprsg", 4))
-	assert.Equal(t, 11, nonRepeatingChars("zcfzfwzzqfrljwzlrfnpqdbhtmscgvjw", 4))
-}
-
-func TestPuzzleP2(t *testing.T) {
-	assert.Equal(t, 19, nonRepeatingChars("mjqjpqmgbljsphdztnvjfqwrcgsmlb", 14))
-	assert.Equal(t, 23, nonRepeatingChars("bvwbjplbgvbhsrlpgdmjqwftvncz", 14))
-	assert.Equal(t, 23, nonRepeatingChars("nppdvjthqldpwncqszvftbrmjlhg", 14))
-	assert.Equal(t, 29, nonRepeatingChars("nznrnfrfntjfmvfwmzdfjlvtqnbhcprsg", 14))
-	assert.Equal(t, 26, nonRepeatingChars("zcfzfwzzqfrljwzlrfnpqdbhtmscgvjw", 14))
+	tests := []struct {
+		input    string
+		expect4  int
+		expect14 int
+	}{
+		{
+			input:    "mjqjpqmgbljsphdztnvjfqwrcgsmlb",
+			expect4:  7,
+			expect14: 19,
+		},
+		{
+			input:    "bvwbjplbgvbhsrlpgdmjqwftvncz",
+			expect4:  5,
+			expect14: 23,
+		},
+		{
+			input:    "nppdvjthqldpwncqszvftbrmjlhg",
+			expect4:  6,
+			expect14: 23,
+		},
+		{
+			input:    "nznrnfrfntjfmvfwmzdfjlvtqnbhcprsg",
+			expect4:  10,
+			expect14: 29,
+		},
+		{
+			input:    "zcfzfwzzqfrljwzlrfnpqdbhtmscgvjw",
+			expect4:  11,
+			expect14: 26,
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.input+"-4", func(t *testing.T) {
+			assert.Equal(t, test.expect4, nonRepeatingChars(test.input, 4))
+		})
+		t.Run(test.input+"-14", func(t *testing.T) {
+			assert.Equal(t, test.expect14, nonRepeatingChars(test.input, 14))
+		})
+	}
 }
