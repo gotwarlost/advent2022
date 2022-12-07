@@ -40,12 +40,12 @@ func (s *dirEntry) walk(fn func(name string, d *dirEntry)) {
 	}
 }
 
-func run(s string, max int) (p1 int, p2 int) {
-	var currentDir *dirEntry
+func readTree(s string) *dirEntry {
 	root := &dirEntry{
 		name:    "/",
 		SubDirs: map[string]*dirEntry{},
 	}
+	var currentDir *dirEntry
 	lines := strings.Split(strings.TrimSpace(s), "\n")
 	inList := false
 	for _, line := range lines {
@@ -105,13 +105,11 @@ func run(s string, max int) (p1 int, p2 int) {
 			}
 		}
 	}
-	/*
-		b, err := json.MarshalIndent(root, "", "  ")
-		if err != nil {
-			panic(err)
-		}
-	*/
+	return root
+}
 
+func run(s string, max int) (p1 int, p2 int) {
+	root := readTree(s)
 	var size int
 	root.walk(func(name string, d *dirEntry) {
 		if d.size() < max {
