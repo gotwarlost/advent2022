@@ -33,8 +33,8 @@ func (s *dirEntry) size() int {
 	return size
 }
 
-func (s *dirEntry) walk(fn func(name string, d *dirEntry)) {
-	fn(s.name, s)
+func (s *dirEntry) walk(fn func(d *dirEntry)) {
+	fn(s)
 	for _, d := range s.SubDirs {
 		d.walk(fn)
 	}
@@ -111,7 +111,7 @@ func readTree(s string) *dirEntry {
 func run(s string, max int) (p1 int, p2 int) {
 	root := readTree(s)
 	var size int
-	root.walk(func(name string, d *dirEntry) {
+	root.walk(func(d *dirEntry) {
 		if d.size() < max {
 			size += d.size()
 		}
@@ -122,7 +122,7 @@ func run(s string, max int) (p1 int, p2 int) {
 	required := 30000000
 	want := required - unused
 
-	root.walk(func(name string, d *dirEntry) {
+	root.walk(func(d *dirEntry) {
 		sz := d.size()
 		if sz >= want {
 			if min == 0 {
