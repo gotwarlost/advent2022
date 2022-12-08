@@ -21,8 +21,7 @@ func (g grid) cols() int {
 }
 
 func clone(in []int) []int {
-	l := len(in)
-	x := make([]int, l)
+	x := make([]int, len(in))
 	copy(x, in)
 	return x
 }
