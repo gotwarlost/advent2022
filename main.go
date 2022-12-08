@@ -6,14 +6,14 @@ import (
 	"sort"
 	"strings"
 
-	"cd.splunkdev.com/kanantheswaran/advent2022/dec1"
-	"cd.splunkdev.com/kanantheswaran/advent2022/dec2"
-	"cd.splunkdev.com/kanantheswaran/advent2022/dec3"
-	"cd.splunkdev.com/kanantheswaran/advent2022/dec4"
-	"cd.splunkdev.com/kanantheswaran/advent2022/dec5"
-	"cd.splunkdev.com/kanantheswaran/advent2022/dec6"
-	"cd.splunkdev.com/kanantheswaran/advent2022/dec7"
-	"cd.splunkdev.com/kanantheswaran/advent2022/dec8"
+	"github.com/gotwarlost/advent2022/dec1"
+	"github.com/gotwarlost/advent2022/dec2"
+	"github.com/gotwarlost/advent2022/dec3"
+	"github.com/gotwarlost/advent2022/dec4"
+	"github.com/gotwarlost/advent2022/dec5"
+	"github.com/gotwarlost/advent2022/dec6"
+	"github.com/gotwarlost/advent2022/dec7"
+	"github.com/gotwarlost/advent2022/dec8"
 )
 
 type puzzle func()

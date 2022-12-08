@@ -1,4 +1,4 @@
-module cd.splunkdev.com/kanantheswaran/advent2022
+module github.com/gotwarlost/advent2022
 
 go 1.19
 
