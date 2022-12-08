@@ -13,6 +13,7 @@ import (
 	"cd.splunkdev.com/kanantheswaran/advent2022/dec5"
 	"cd.splunkdev.com/kanantheswaran/advent2022/dec6"
 	"cd.splunkdev.com/kanantheswaran/advent2022/dec7"
+	"cd.splunkdev.com/kanantheswaran/advent2022/dec8"
 )
 
 type puzzle func()
@@ -30,6 +31,8 @@ var puzzles = map[string]puzzle{
 	"dec6-p1": dec6.RunPart1,
 	"dec6-p2": dec6.RunPart2,
 	"dec7":    dec7.Run,
+	"dec8-p1": dec8.RunP1,
+	"dec8-p2": dec8.RunP2,
 }
 
 func names() []string {
