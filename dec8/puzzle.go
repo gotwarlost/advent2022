@@ -10,16 +10,14 @@ import (
 //go:embed input.txt
 var input string
 
-type grid struct {
-	points [][]int
-}
+type grid [][]int
 
 func (g grid) rows() int {
-	return len(g.points)
+	return len(g)
 }
 
 func (g grid) cols() int {
-	return len(g.points[0])
+	return len(g[0])
 }
 
 func clone(in []int) []int {
@@ -29,28 +27,23 @@ func clone(in []int) []int {
 	return x
 }
 
-func reverse(s []int) {
+func reverse(s []int) []int {
 	l := len(s)
 	for i, j := 0, l-1; i < j; i, j = i+1, j-1 {
 		s[i], s[j] = s[j], s[i]
 	}
+	return s // not a new slice but make it easy to chain
 }
 
-func (g grid) horizontalSlice(row, start, end int, r bool) []int {
-	ret := clone(g.points[row][start:end])
-	if r {
-		reverse(ret)
-	}
+func (g grid) horizontalSlice(row, start, end int) []int {
+	ret := clone(g[row][start:end])
 	return ret
 }
 
-func (g grid) verticalSlice(col, start, end int, r bool) []int {
+func (g grid) verticalSlice(col, start, end int) []int {
 	var ret []int
 	for i := start; i < end; i++ {
-		ret = append(ret, g.points[i][col])
-	}
-	if r {
-		reverse(ret)
+		ret = append(ret, g[i][col])
 	}
 	return ret
 }
@@ -71,14 +64,14 @@ func makeGrid(s string) grid {
 		heights = append(heights, nums)
 	}
 
-	g := grid{points: heights}
+	g := grid(heights)
 	return g
 }
 
 func run(s string) int {
 	g := makeGrid(s)
 	checkVisibility := func(i, j int) (out bool) {
-		h := g.points[i][j]
+		h := g[i][j]
 		isVisible := func(s []int) bool {
 			visible := true
 			for _, val := range s {
@@ -90,10 +83,10 @@ func run(s string) int {
 			return visible
 		}
 
-		left, right, top, bottom := g.horizontalSlice(i, 0, j, false),
-			g.horizontalSlice(i, j+1, g.cols(), true),
-			g.verticalSlice(j, 0, i, false),
-			g.verticalSlice(j, i+1, g.rows(), true)
+		left, right, top, bottom := g.horizontalSlice(i, 0, j),
+			reverse(g.horizontalSlice(i, j+1, g.cols())),
+			g.verticalSlice(j, 0, i),
+			reverse(g.verticalSlice(j, i+1, g.rows()))
 
 		return isVisible(left) || isVisible(right) || isVisible(top) || isVisible(bottom)
 	}
@@ -111,7 +104,7 @@ func run(s string) int {
 func run2(s string) int {
 	g := makeGrid(s)
 	getScore := func(i, j int) int {
-		h := g.points[i][j]
+		h := g[i][j]
 		scoreFor := func(s []int) int {
 			count := 0
 			for _, val := range s {
@@ -123,10 +116,10 @@ func run2(s string) int {
 			return count
 		}
 
-		left, right, top, bottom := g.horizontalSlice(i, 0, j, true),
-			g.horizontalSlice(i, j+1, g.cols(), false),
-			g.verticalSlice(j, 0, i, true),
-			g.verticalSlice(j, i+1, g.rows(), false)
+		left, right, top, bottom := reverse(g.horizontalSlice(i, 0, j)),
+			g.horizontalSlice(i, j+1, g.cols()),
+			reverse(g.verticalSlice(j, 0, i)),
+			g.verticalSlice(j, i+1, g.rows())
 
 		return scoreFor(left) * scoreFor(right) * scoreFor(top) * scoreFor(bottom)
 	}
