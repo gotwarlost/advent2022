@@ -11,11 +11,11 @@ import (
 var testInput string
 
 func TestP1(t *testing.T) {
-	assert.Equal(t, 13, run(testInput, 2))
-	assert.Equal(t, 5695, run(input, 2))
+	assert.Equal(t, 13, countVisited(testInput, 2))
+	assert.Equal(t, 5695, countVisited(input, 2))
 }
 
 func TestP2(t *testing.T) {
-	assert.Equal(t, 1, run(testInput, 10))
-	assert.Equal(t, 2434, run(input, 10))
+	assert.Equal(t, 1, countVisited(testInput, 10))
+	assert.Equal(t, 2434, countVisited(input, 10))
 }

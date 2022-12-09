@@ -14,6 +14,40 @@ type point struct {
 	x, y int
 }
 
+type move byte
+
+const (
+	left  move = 'L'
+	right move = 'R'
+	down  move = 'D'
+	up    move = 'U'
+)
+
+func toMoves(in string) []move {
+	var moves []move
+	lines := strings.Split(strings.TrimSpace(in), "\n")
+	for _, line := range lines {
+		parts := strings.Split(line, " ")
+		if len(parts) != 2 {
+			panic(line)
+		}
+		count, err := strconv.Atoi(parts[1])
+		if err != nil {
+			panic(err)
+		}
+		switch parts[0] {
+		case "D", "U", "L", "R":
+			// ok
+		default:
+			panic(fmt.Errorf("line: %s, bad move", line))
+		}
+		for i := 0; i < count; i++ {
+			moves = append(moves, move(parts[0][0]))
+		}
+	}
+	return moves
+}
+
 func absDiff(a, b int) int {
 	d := a - b
 	if d < 0 {
@@ -53,51 +87,43 @@ func moveTail(head, tail point) point {
 	return tail
 }
 
-func run(in string, knots int) int {
+func countVisited(in string, knots int) int {
+	moves := toMoves(in)
 	seen := map[point]bool{{0, 0}: true}
 	rope := make([]point, knots)
 
-	lines := strings.Split(strings.TrimSpace(in), "\n")
-	for _, line := range lines {
-		parts := strings.Split(line, " ")
-		if len(parts) != 2 {
-			panic(line)
+	for _, m := range moves {
+		// move the head
+		head := rope[0]
+		switch m {
+		case down:
+			head.y--
+		case up:
+			head.y++
+		case left:
+			head.x--
+		case right:
+			head.x++
 		}
-		count, err := strconv.Atoi(parts[1])
-		if err != nil {
-			panic(err)
-		}
-		for i := 0; i < count; i++ {
-			head := rope[0]
-			switch parts[0] {
-			case "D":
-				head.y--
-			case "U":
-				head.y++
-			case "L":
-				head.x--
-			case "R":
-				head.x++
-			default:
-				panic(parts[0])
+		rope[0] = head
+		for k := 1; k < knots; k++ {
+			prev := rope[k-1]
+			prevTail := rope[k]
+			tail := moveTail(prev, prevTail)
+			if tail == prevTail { // this hasn't moved so nothing else below it should move
+				break
 			}
-			rope[0] = head
-			for k := 1; k < knots; k++ {
-				prev := rope[k-1]
-				tail := rope[k]
-				tail = moveTail(prev, tail)
-				rope[k] = tail
-			}
-			seen[rope[knots-1]] = true
+			rope[k] = tail
 		}
+		seen[rope[knots-1]] = true
 	}
 	return len(seen)
 }
 
 func RunP1() {
-	fmt.Println(run(input, 2))
+	fmt.Println(countVisited(input, 2))
 }
 
 func RunP2() {
-	fmt.Println(run(input, 10))
+	fmt.Println(countVisited(input, 10))
 }
