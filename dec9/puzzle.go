@@ -23,24 +23,20 @@ func absDiff(a, b int) int {
 }
 
 func moveTail(head, tail point) point {
-	if absDiff(head.x, tail.x) < 2 && absDiff(head.y, tail.y) < 2 {
-		return tail
-	}
 	switch {
-	case head.x == tail.x || head.y == tail.y:
-		if head.x != tail.x {
-			if head.x > tail.x {
-				tail.x++
-			} else {
-				tail.x--
-			}
+	case absDiff(head.x, tail.x) < 2 && absDiff(head.y, tail.y) < 2:
+		return tail
+	case head.x == tail.x && head.y != tail.y:
+		if head.y > tail.y {
+			tail.y++
+		} else {
+			tail.y--
 		}
-		if head.y != tail.y {
-			if head.y > tail.y {
-				tail.y++
-			} else {
-				tail.y--
-			}
+	case head.x != tail.x && head.y == tail.y:
+		if head.x > tail.x {
+			tail.x++
+		} else {
+			tail.x--
 		}
 	default: // diagonal
 		if head.y > tail.y {
@@ -48,10 +44,10 @@ func moveTail(head, tail point) point {
 		} else {
 			tail.y--
 		}
-		if head.x < tail.x {
-			tail.x--
-		} else {
+		if head.x > tail.x {
 			tail.x++
+		} else {
+			tail.x--
 		}
 	}
 	return tail
@@ -72,30 +68,27 @@ func run(in string, knots int) int {
 			panic(err)
 		}
 		for i := 0; i < count; i++ {
-			for k := 0; k < knots-1; k++ {
-				head := rope[k]
-				tail := rope[k+1]
-				if k == 0 { // move head
-					switch parts[0] {
-					case "D":
-						head.y--
-					case "U":
-						head.y++
-					case "L":
-						head.x--
-					case "R":
-						head.x++
-					default:
-						panic(parts[0])
-					}
-				}
-				tail = moveTail(head, tail)
-				rope[k] = head
-				rope[k+1] = tail
-				if k == knots-2 {
-					seen[tail] = true
-				}
+			head := rope[0]
+			switch parts[0] {
+			case "D":
+				head.y--
+			case "U":
+				head.y++
+			case "L":
+				head.x--
+			case "R":
+				head.x++
+			default:
+				panic(parts[0])
 			}
+			rope[0] = head
+			for k := 1; k < knots; k++ {
+				prev := rope[k-1]
+				tail := rope[k]
+				tail = moveTail(prev, tail)
+				rope[k] = tail
+			}
+			seen[rope[knots-1]] = true
 		}
 	}
 	return len(seen)
