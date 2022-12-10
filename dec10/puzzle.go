@@ -10,7 +10,7 @@ import (
 type strengths []int
 
 func (s strengths) multAt(n int) int {
-	return n * s[n-1]
+	return n * s.valueAt(n)
 }
 
 func (s strengths) valueAt(n int) int {
@@ -49,7 +49,7 @@ func toSignals(in string) []signal {
 	return sigs
 }
 
-func run(in string) strengths {
+func getStrengths(in string) strengths {
 	sigs := toSignals(in)
 	x := 1
 	var afterValues []int
@@ -60,8 +60,8 @@ func run(in string) strengths {
 	return afterValues
 }
 
-func run2(in string) {
-	ss := run(in)
+func printCRT(in string) {
+	ss := getStrengths(in)
 	cycle := 0
 	for row := 0; row < 6; row++ {
 		for col := 0; col < 40; col++ {
@@ -80,9 +80,9 @@ func run2(in string) {
 }
 
 func RunP1() {
-	fmt.Println(run(input))
+	fmt.Println(getStrengths(input))
 }
 
 func RunP2() {
-	run2(input)
+	printCRT(input)
 }
