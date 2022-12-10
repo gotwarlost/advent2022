@@ -65,12 +65,7 @@ func run2(in string) {
 	cycle := 0
 	for row := 0; row < 6; row++ {
 		for col := 0; col < 40; col++ {
-			var s int
-			if cycle == 0 {
-				s = 1
-			} else {
-				s = ss.valueAt(cycle)
-			}
+			s := ss.valueAt(cycle)
 			min := s - 1
 			max := s + 1
 			if col >= min && col <= max {
