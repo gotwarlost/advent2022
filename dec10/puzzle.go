@@ -80,7 +80,8 @@ func printCRT(in string) {
 }
 
 func RunP1() {
-	fmt.Println(getStrengths(input))
+	s := getStrengths(input)
+	fmt.Println(s.multAt(20) + s.multAt(60) + s.multAt(100) + s.multAt(140) + s.multAt(180) + s.multAt(220))
 }
 
 func RunP2() {
