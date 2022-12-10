@@ -14,10 +14,7 @@ func (s strengths) multAt(n int) int {
 }
 
 func (s strengths) valueAt(n int) int {
-	if n == 0 {
-		return 1
-	}
-	return s[n-1]
+	return s[n]
 }
 
 type signal struct {
@@ -52,12 +49,12 @@ func toSignals(in string) []signal {
 func getStrengths(in string) strengths {
 	sigs := toSignals(in)
 	x := 1
-	var afterValues []int
+	beforeValues := []int{1}
 	for _, cycle := range sigs {
 		x += cycle.xInc
-		afterValues = append(afterValues, x)
+		beforeValues = append(beforeValues, x)
 	}
-	return afterValues
+	return beforeValues
 }
 
 func printCRT(in string) {
