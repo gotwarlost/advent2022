@@ -3,6 +3,8 @@ package dec10
 import (
 	_ "embed"
 	"fmt"
+	"io"
+	"os"
 	"strconv"
 	"strings"
 )
@@ -14,7 +16,7 @@ func (s strengths) multAt(n int) int {
 }
 
 func (s strengths) valueAt(n int) int {
-	return s[n]
+	return s[n-1]
 }
 
 type signal struct {
@@ -49,30 +51,30 @@ func toSignals(in string) []signal {
 func getStrengths(in string) strengths {
 	sigs := toSignals(in)
 	x := 1
-	beforeValues := []int{1}
+	afterValues := []int{1}
 	for _, cycle := range sigs {
 		x += cycle.xInc
-		beforeValues = append(beforeValues, x)
+		afterValues = append(afterValues, x)
 	}
-	return beforeValues
+	return afterValues
 }
 
-func printCRT(in string) {
+func printCRT(in string, w io.Writer) {
 	ss := getStrengths(in)
-	cycle := 0
+	cycle := 1
 	for row := 0; row < 6; row++ {
 		for col := 0; col < 40; col++ {
 			s := ss.valueAt(cycle)
 			min := s - 1
 			max := s + 1
 			if col >= min && col <= max {
-				fmt.Print("#")
+				fmt.Fprint(w, "#")
 			} else {
-				fmt.Print(".")
+				fmt.Fprint(w, ".")
 			}
 			cycle++
 		}
-		fmt.Println("")
+		fmt.Fprintln(w)
 	}
 }
 
@@ -82,5 +84,5 @@ func RunP1() {
 }
 
 func RunP2() {
-	printCRT(input)
+	printCRT(input, os.Stdout)
 }
