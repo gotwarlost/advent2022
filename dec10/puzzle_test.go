@@ -20,7 +20,7 @@ func TestP1(t *testing.T) {
 	assert.EqualValues(t, 2940, s.multAt(140))
 	assert.EqualValues(t, 2880, s.multAt(180))
 
-	// this does not match explanation in puzzle but regular input checks out; need ot figure out why
+	// this does not match explanation in puzzle but regular input checks out; need to figure out why
 	assert.EqualValues(t, 4180, s.multAt(220))
 	assert.Equal(t, 13360, s.multAt(20)+s.multAt(60)+s.multAt(100)+s.multAt(140)+s.multAt(180)+s.multAt(220))
 
@@ -29,4 +29,5 @@ func TestP1(t *testing.T) {
 }
 
 func TestP2(t *testing.T) {
+	// cannot write a test for this :(
 }
