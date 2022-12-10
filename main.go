@@ -6,36 +6,39 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/gotwarlost/advent2022/dec1"
-	"github.com/gotwarlost/advent2022/dec2"
-	"github.com/gotwarlost/advent2022/dec3"
-	"github.com/gotwarlost/advent2022/dec4"
-	"github.com/gotwarlost/advent2022/dec5"
-	"github.com/gotwarlost/advent2022/dec6"
-	"github.com/gotwarlost/advent2022/dec7"
-	"github.com/gotwarlost/advent2022/dec8"
-	"github.com/gotwarlost/advent2022/dec9"
+	"github.com/gotwarlost/advent2022/dec01"
+	"github.com/gotwarlost/advent2022/dec02"
+	"github.com/gotwarlost/advent2022/dec03"
+	"github.com/gotwarlost/advent2022/dec04"
+	"github.com/gotwarlost/advent2022/dec05"
+	"github.com/gotwarlost/advent2022/dec06"
+	"github.com/gotwarlost/advent2022/dec07"
+	"github.com/gotwarlost/advent2022/dec08"
+	"github.com/gotwarlost/advent2022/dec09"
+	"github.com/gotwarlost/advent2022/dec10"
 )
 
 type puzzle func()
 
 var puzzles = map[string]puzzle{
-	"dec1":    dec1.Run,
-	"dec2-p1": dec2.RunPart1,
-	"dec2-p2": dec2.RunPart2,
-	"dec3-p1": dec3.RunPart1,
-	"dec3-p2": dec3.RunPart2,
-	"dec4-p1": dec4.RunPart1,
-	"dec4-p2": dec4.RunPart2,
-	"dec5-p1": dec5.RunPart1,
-	"dec5-p2": dec5.RunPart2,
-	"dec6-p1": dec6.RunPart1,
-	"dec6-p2": dec6.RunPart2,
-	"dec7":    dec7.Run,
-	"dec8-p1": dec8.RunP1,
-	"dec8-p2": dec8.RunP2,
-	"dec9-p1": dec9.RunP1,
-	"dec9-p2": dec9.RunP2,
+	"dec1":     dec01.Run,
+	"dec2-p1":  dec02.RunPart1,
+	"dec2-p2":  dec02.RunPart2,
+	"dec3-p1":  dec03.RunPart1,
+	"dec3-p2":  dec03.RunPart2,
+	"dec4-p1":  dec04.RunPart1,
+	"dec4-p2":  dec04.RunPart2,
+	"dec5-p1":  dec05.RunPart1,
+	"dec5-p2":  dec05.RunPart2,
+	"dec6-p1":  dec06.RunPart1,
+	"dec6-p2":  dec06.RunPart2,
+	"dec7":     dec07.Run,
+	"dec8-p1":  dec08.RunP1,
+	"dec8-p2":  dec08.RunP2,
+	"dec9-p1":  dec09.RunP1,
+	"dec9-p2":  dec09.RunP2,
+	"dec10-p1": dec10.RunP1,
+	"dec10-p2": dec10.RunP2,
 }
 
 func names() []string {

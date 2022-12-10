@@ -1,4 +1,4 @@
-package dec7
+package dec07
 
 import (
 	_ "embed"

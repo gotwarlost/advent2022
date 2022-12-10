@@ -1,4 +1,4 @@
-package dec5
+package dec03
 
 import (
 	_ "embed"
@@ -14,14 +14,14 @@ var testInput string
 
 func TestPuzzleP1(t *testing.T) {
 	out := runPart1(testInput)
-	assert.Equal(t, "CMZ", out)
+	assert.Equal(t, 157, out)
 	out = runPart1(input)
-	assert.Equal(t, "LBLVVTVLP", out)
+	assert.Equal(t, 8088, out)
 }
 
 func TestPuzzleP2(t *testing.T) {
 	out := runPart2(testInput)
-	assert.Equal(t, "MCD", out)
+	assert.Equal(t, 70, out)
 	out = runPart2(input)
-	assert.Equal(t, "TPFFBDRJD", out)
+	assert.Equal(t, 2522, out)
 }
