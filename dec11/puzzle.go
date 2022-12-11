@@ -3,7 +3,6 @@ package dec11
 import (
 	_ "embed"
 	"fmt"
-	"log"
 	"regexp"
 	"sort"
 	"strconv"
@@ -14,23 +13,25 @@ import (
 var input string
 
 type monkey struct {
-	items         []int64
-	operation     func(x int64) int64
-	divisor       int64
+	items         []int
+	operation     func(x int) int
+	divisor       int
 	divTarget     int
 	defaultTarget int
-	inspections   int64
+	inspections   int
 }
 
 func (m *monkey) String() string {
 	return fmt.Sprintf("items: %v, inspections: %d", m.items, m.inspections)
 }
 
-func (m *monkey) doRound(all []*monkey, worryDivisor int64) {
+func (m *monkey) doRound(all []*monkey, worryDivisor, commonDivisor int) {
 	for _, item := range m.items {
 		m.inspections++
 		worryBase := m.operation(item)
 		worry := worryBase / worryDivisor
+
+		worry = worry % commonDivisor
 
 		testOutcome := worry % m.divisor
 		var target int
@@ -52,9 +53,10 @@ var (
 	ifRE         = regexp.MustCompile(`^\s+If (true|false): throw to monkey (\d+)`)
 )
 
-func toMonkeys(in string) []*monkey {
+func toMonkeys(in string) ([]*monkey, int) {
 	var ret []*monkey
 	lines := strings.Split(strings.TrimSpace(in), "\n")
+	commonDivisor := 1
 	var currMonkey *monkey
 	for _, line := range lines {
 		switch {
@@ -67,15 +69,15 @@ func toMonkeys(in string) []*monkey {
 			m := opRE.FindStringSubmatch(line)
 			operator := m[1]
 			what := m[2]
-			var operand int64
+			var operand int
 			if what != "old" {
-				n, err := strconv.ParseInt(what, 10, 64)
+				n, err := strconv.Atoi(what)
 				if err != nil {
 					panic(err)
 				}
 				operand = n
 			}
-			currMonkey.operation = func(x int64) int64 {
+			currMonkey.operation = func(x int) int {
 				target := operand
 				if what == "old" {
 					target = x
@@ -89,11 +91,12 @@ func toMonkeys(in string) []*monkey {
 			}
 		case testRE.MatchString(line):
 			m := testRE.FindStringSubmatch(line)
-			d, err := strconv.ParseInt(m[1], 10, 64)
+			d, err := strconv.Atoi(m[1])
 			if err != nil {
 				panic(err)
 			}
 			currMonkey.divisor = d
+			commonDivisor = commonDivisor * d
 		case ifRE.MatchString(line):
 			m := ifRE.FindStringSubmatch(line)
 			target, err := strconv.Atoi(m[2])
@@ -109,7 +112,7 @@ func toMonkeys(in string) []*monkey {
 			m := startItemsRE.FindStringSubmatch(line)
 			items := strings.Split(strings.TrimSpace(m[1]), ",")
 			for _, item := range items {
-				n, err := strconv.ParseInt(strings.TrimSpace(item), 10, 64)
+				n, err := strconv.Atoi(strings.TrimSpace(item))
 				if err != nil {
 					panic(err)
 				}
@@ -119,24 +122,14 @@ func toMonkeys(in string) []*monkey {
 			panic(fmt.Errorf("no match for line: %q", line))
 		}
 	}
-	return ret
+	return ret, commonDivisor
 }
 
-func run(in string, divisor int64, rounds int) []*monkey {
-	monkeys := toMonkeys(in)
+func run(in string, divisor int, rounds int) []*monkey {
+	monkeys, commonDivisor := toMonkeys(in)
 	for round := 0; round < rounds; round++ {
 		for _, m := range monkeys {
-			m.doRound(monkeys, divisor)
-		}
-		print := func(i int) {
-			log.Println("ROUNDS:", i)
-			for _, m := range monkeys {
-				log.Printf("%+v\n", m)
-			}
-		}
-		switch round {
-		case 0, 14, 19, 999, 1999, 2999:
-			print(round)
+			m.doRound(monkeys, divisor, commonDivisor)
 		}
 	}
 	sort.Slice(monkeys, func(i, j int) bool {
@@ -145,12 +138,12 @@ func run(in string, divisor int64, rounds int) []*monkey {
 	return monkeys
 }
 
-func runP1(in string) int64 {
+func runP1(in string) int {
 	list := run(in, 3, 20)
 	return list[0].inspections * list[1].inspections
 }
 
-func runP2(in string) int64 {
+func runP2(in string) int {
 	list := run(in, 1, 10000)
 	return list[0].inspections * list[1].inspections
 }
@@ -160,5 +153,5 @@ func RunP1() {
 }
 
 func RunP2() {
-	fmt.Println(runP1(input))
+	fmt.Println(runP2(input))
 }
