@@ -33,7 +33,7 @@ func (g grid) String() string {
 	var w bytes.Buffer
 	for _, row := range g {
 		for _, col := range row {
-			x := fmt.Sprintf("%c ", byte(col)+'a')
+			x := fmt.Sprintf("%c ", byte(col))
 			w.Write([]byte(x))
 		}
 		w.Write([]byte{'\n'})
@@ -68,7 +68,7 @@ func toGrid(in string) puzzleInput {
 				end.col = j
 				val = 'z'
 			}
-			colArray = append(colArray, int(val-'a'))
+			colArray = append(colArray, int(val))
 		}
 		g = append(g, colArray)
 	}
@@ -139,7 +139,7 @@ func runP2(in string) int {
 	for i, row := range pz.grid {
 		for j := range row {
 			p := position{i, j}
-			if pz.grid.value(p) != 0 { // not 'a'
+			if pz.grid.value(p) != int('a') {
 				continue
 			}
 			if _, ok := scores[p]; !ok { // unreachable, no score set
