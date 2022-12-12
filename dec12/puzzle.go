@@ -70,10 +70,8 @@ func toGrid(in string) puzzleInput {
 			}
 			colArray = append(colArray, int(val-'a'))
 		}
-		fmt.Println()
 		g = append(g, colArray)
 	}
-	fmt.Println(g)
 	return puzzleInput{
 		grid:  g,
 		start: start,
