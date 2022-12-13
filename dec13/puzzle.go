@@ -5,7 +5,6 @@ import (
 	_ "embed"
 	"fmt"
 	"io"
-	"regexp"
 	"sort"
 	"strconv"
 	"strings"
@@ -14,161 +13,203 @@ import (
 //go:embed input.txt
 var input string
 
-// listishRE is a regular expression that matches 0 or more left brackets, 0 or one digit sequence, and 0 or more right brackets
-var listishRE = regexp.MustCompile(`^(\[*)(\d*)(]*)$`)
-
-// Comparison is the result of a comparison.
-type Comparison int
+// comparison is the result of a comparison.
+type comparison int
 
 const (
-	Equal Comparison = iota
-	Lesser
-	Greater
+	eq comparison = iota
+	lesser
+	greater
 )
 
-// Kind is the kind of thing we are dealing with
-type Kind int
+// nodeKind is the kind of node
+type nodeKind int
 
-// types of things
+// kinds of nodes
 const (
-	KindList Kind = iota
-	KindInteger
+	kindContainer nodeKind = iota
+	kindLeaf
 )
 
-// listOrInt is either a list of listOrInt values or a single integer
-type listOrInt struct {
-	parent  *listOrInt   // the listOrInt that contains this one, nil for root
-	kind    Kind         // kind of thing
-	n       int          // integer value if int
-	l       []*listOrInt // list of stuff if list
-	special bool         // a marker for pre-specified values
+// node is either a container or a leaf
+type node struct {
+	kind     nodeKind // kind of node
+	value    int      // integer value if int
+	children []*node  // children if list
 }
 
-func (l *listOrInt) writeValue(w io.Writer) {
+func (n *node) writeValue(w io.Writer) {
 	write := func(s string) {
 		_, _ = w.Write([]byte(s))
 	}
-	if l.kind == KindInteger {
-		write(fmt.Sprint(l.n))
-		write(",")
+	if n.kind == kindLeaf {
+		write(fmt.Sprint(n.value))
 		return
 	}
-	write("[ ")
-	for _, x := range l.l {
+	write("[")
+	for i, x := range n.children {
+		if i > 0 {
+			write(",")
+		}
 		x.writeValue(w)
 	}
-	write(" ]")
+	write("]")
 }
 
-func (l *listOrInt) String() string {
+func (n *node) String() string {
 	var x bytes.Buffer
-	l.writeValue(&x)
+	n.writeValue(&x)
 	return x.String()
 }
 
-// cmp compares this listOrInt with another
-func (l *listOrInt) cmp(other *listOrInt) Comparison {
+// cmp compares this node with another
+func (n *node) cmp(other *node) comparison {
 	switch {
-	// if both integers, do a simple compare
-	case l.kind == KindInteger && other.kind == KindInteger:
+	// if both leaves, do a simple compare
+	case n.kind == kindLeaf && other.kind == kindLeaf:
 		switch {
-		case l.n > other.n:
-			return Greater
-		case l.n < other.n:
-			return Lesser
+		case n.value > other.value:
+			return greater
+		case n.value < other.value:
+			return lesser
 		default:
-			return Equal
+			return eq
 		}
 
-	// if both lists, compare an element at a time. If everything equal and this is longer return Greater.
-	// If everything equal but other is longer return Lesser.
-	case l.kind == KindList && other.kind == KindList:
-		for i := 0; i < len(l.l); i++ {
-			if i >= len(other.l) {
-				return Greater
+	// if both containers, compare an element at a time. If everything equal and this is longer return greater.
+	// If everything equal but other is longer return lesser.
+	case n.kind == kindContainer && other.kind == kindContainer:
+		for i := 0; i < len(n.children); i++ {
+			if i >= len(other.children) {
+				return greater
 			}
-			c := l.l[i].cmp(other.l[i])
+			c := n.children[i].cmp(other.children[i])
 			switch c {
-			case Lesser:
-				return Lesser
-			case Greater:
-				return Greater
+			case lesser, greater:
+				return c
 			default:
 				// fall through
 			}
 		}
-		if len(other.l) > len(l.l) {
-			return Lesser
+		if len(other.children) > len(n.children) {
+			return lesser
 		}
-		return Equal
+		return eq
 
-	// mismatched types; promote integer to a list and resume comparison
-	case l.kind == KindInteger:
-		s := &listOrInt{kind: KindList, l: []*listOrInt{{kind: KindInteger, n: l.n}}}
-		return s.cmp(other)
+	// mismatched types; promote leaf to container and resume comparison
+	case n.kind == kindLeaf:
+		return createContainer(n).cmp(other)
 	default:
-		s := &listOrInt{kind: KindList, l: []*listOrInt{{kind: KindInteger, n: other.n}}}
-		return l.cmp(s)
+		return n.cmp(createContainer(other))
 	}
 }
 
-// parseLine parses a single line into a list or int
-func parseLine(line string) *listOrInt {
-	var ret *listOrInt
+func (n *node) addChild(child *node) {
+	n.children = append(n.children, child)
+}
 
-	if !(strings.HasPrefix(line, "[") && strings.HasSuffix(line, "]")) {
-		panic(fmt.Errorf("bad line: %s", line))
+func createContainer(children ...*node) *node {
+	ret := &node{kind: kindContainer}
+	for _, c := range children {
+		ret.addChild(c)
+	}
+	return ret
+}
+
+type tokenKind int
+
+const (
+	_ tokenKind = iota
+	tokOpen
+	tokNumber
+	tokClose
+)
+
+type token struct {
+	kind  tokenKind
+	value int
+}
+
+func tokenize(line []byte) []token {
+	isNum := func(b byte) bool {
+		return b >= '0' && b <= '9'
 	}
 
-	parts := strings.Split(line, ",")
-	var curr *listOrInt
-	for _, p := range parts {
-		m := listishRE.FindStringSubmatch(p)
-		if m == nil {
-			panic(fmt.Errorf("precondition violated: %s", p))
+	var ret []token
+	pos := 0
+	for {
+		if pos == len(line) {
+			break
 		}
-		// process the [[[[ by pushing lists into current
-		for i := 0; i < len(m[1]); i++ {
-			if curr == nil {
-				curr = &listOrInt{kind: KindList}
-				ret = curr
-			} else {
-				if curr.kind != KindList {
-					panic("oops")
+		ch := line[pos]
+		switch {
+		case ch == '[':
+			ret = append(ret, token{kind: tokOpen})
+			pos++
+		case ch == ']':
+			ret = append(ret, token{kind: tokClose})
+			pos++
+		case isNum(ch):
+			var endPos int
+			for endPos = pos + 1; endPos < len(line); endPos++ {
+				if !isNum(line[endPos]) {
+					break
 				}
-				next := &listOrInt{kind: KindList, parent: curr}
-				curr.l = append(curr.l, next)
-				curr = next
 			}
-		}
-
-		// process the numbers by pushing them into current list
-		if len(m[2]) > 0 {
-			n, err := strconv.Atoi(m[2])
+			numStr := string(line[pos:endPos])
+			n, err := strconv.Atoi(numStr)
 			if err != nil {
 				panic(err)
 			}
-			if curr == nil {
-				panic("oops")
-			}
-			curr.l = append(curr.l, &listOrInt{kind: KindInteger, n: n})
+			ret = append(ret, token{kind: tokNumber, value: n})
+			pos = endPos
+		default:
+			pos++
 		}
-
-		// process the ]]]] by popping them off current
-		for i := 0; i < len(m[3]); i++ {
-			if curr == nil {
-				panic("too many pops")
-			}
-			curr = curr.parent
-		}
-	}
-	if curr != nil {
-		panic("not everything was popped")
-	}
-	if ret == nil {
-		panic("ret was nil")
 	}
 	return ret
+}
+
+type nodeStack struct {
+	nodes []*node
+}
+
+func (s *nodeStack) isEmpty() bool   { return len(s.nodes) == 0 }
+func (s *nodeStack) push(node *node) { s.nodes = append(s.nodes, node) }
+func (s *nodeStack) peek() *node     { return s.nodes[len(s.nodes)-1] }
+
+func (s *nodeStack) pop() *node {
+	top := len(s.nodes) - 1
+	n := s.nodes[top]
+	s.nodes = s.nodes[:top]
+	return n
+}
+
+func parseLine(line string) *node {
+	var root *node
+	s := nodeStack{}
+	tokenValues := tokenize([]byte(line))
+
+	for _, tok := range tokenValues {
+		switch tok.kind {
+		case tokOpen:
+			c := createContainer()
+			if s.isEmpty() {
+				root = c
+			} else {
+				s.peek().addChild(c)
+			}
+			s.push(c)
+		case tokClose:
+			s.pop()
+		default:
+			s.peek().addChild(&node{kind: kindLeaf, value: tok.value})
+		}
+	}
+	if !s.isEmpty() {
+		panic("stack not fully popped")
+	}
+	return root
 }
 
 func runP1(in string) int {
@@ -181,9 +222,9 @@ func runP1(in string) int {
 			panic(fmt.Errorf("bad lines, %v", block))
 		}
 		x, y := parseLine(lines[0]), parseLine(lines[1])
-		comparison := x.cmp(y)
+		c := x.cmp(y)
 		oneBased := index + 1
-		if comparison != Greater {
+		if c != greater {
 			correct = append(correct, oneBased)
 			sum += oneBased
 		}
@@ -193,9 +234,7 @@ func runP1(in string) int {
 
 func runP2(in string) int {
 	s1, s2 := parseLine("[[2]]"), parseLine("[[6]]")
-	s1.special = true
-	s2.special = true
-	signals := []*listOrInt{s1, s2}
+	signals := []*node{s1, s2}
 	lines := strings.Split(strings.TrimSpace(in), "\n")
 	for _, line := range lines {
 		if line == "" {
@@ -207,7 +246,7 @@ func runP2(in string) int {
 	sort.Slice(signals, func(i, j int) bool {
 		left := signals[i]
 		right := signals[j]
-		if left.cmp(right) == Greater {
+		if left.cmp(right) == greater {
 			return false
 		}
 		return true
@@ -216,7 +255,7 @@ func runP2(in string) int {
 	// find the specials
 	var specials []int
 	for i, s := range signals {
-		if s.special {
+		if s == s1 || s == s2 {
 			specials = append(specials, i+1)
 		}
 	}
