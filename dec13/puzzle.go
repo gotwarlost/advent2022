@@ -148,7 +148,7 @@ func parseLine(line string) *listOrInt {
 			if err != nil {
 				panic(err)
 			}
-			if curr.kind != KindList {
+			if curr == nil {
 				panic("oops")
 			}
 			curr.l = append(curr.l, &listOrInt{kind: KindInteger, n: n})
@@ -158,9 +158,6 @@ func parseLine(line string) *listOrInt {
 		for i := 0; i < len(m[3]); i++ {
 			if curr == nil {
 				panic("too many pops")
-			}
-			if curr.kind != KindList {
-				panic("precondition failed")
 			}
 			curr = curr.parent
 		}
