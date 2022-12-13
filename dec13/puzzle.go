@@ -14,7 +14,7 @@ import (
 //go:embed input.txt
 var input string
 
-// listishRE is a regular expression that matches 0 or more left brackets, 0 or one digit, and 0 or more right branckets
+// listishRE is a regular expression that matches 0 or more left brackets, 0 or one digit sequence, and 0 or more right brackets
 var listishRE = regexp.MustCompile(`^(\[*)(\d*)(]*)$`)
 
 // Comparison is the result of a comparison.
@@ -31,8 +31,8 @@ type Kind int
 
 // types of things
 const (
-	KindList    Kind = 0
-	KindInteger Kind = 1
+	KindList Kind = iota
+	KindInteger
 )
 
 // listOrInt is either a list of listOrInt values or a single integer
@@ -44,22 +44,25 @@ type listOrInt struct {
 	special bool         // a marker for pre-specified values
 }
 
-func (l *listOrInt) string(w io.Writer) {
+func (l *listOrInt) writeValue(w io.Writer) {
+	write := func(s string) {
+		_, _ = w.Write([]byte(s))
+	}
 	if l.kind == KindInteger {
-		_, _ = w.Write([]byte(fmt.Sprint(l.n)))
-		_, _ = w.Write([]byte(","))
+		write(fmt.Sprint(l.n))
+		write(",")
 		return
 	}
-	_, _ = w.Write([]byte("[ "))
+	write("[ ")
 	for _, x := range l.l {
-		x.string(w)
+		x.writeValue(w)
 	}
-	_, _ = w.Write([]byte(" ]"))
+	write(" ]")
 }
 
 func (l *listOrInt) String() string {
-	x := bytes.NewBuffer(nil)
-	l.string(x)
+	var x bytes.Buffer
+	l.writeValue(&x)
 	return x.String()
 }
 
@@ -68,13 +71,14 @@ func (l *listOrInt) cmp(other *listOrInt) Comparison {
 	switch {
 	// if both integers, do a simple compare
 	case l.kind == KindInteger && other.kind == KindInteger:
-		if l.n == other.n {
+		switch {
+		case l.n > other.n:
+			return Greater
+		case l.n < other.n:
+			return Lesser
+		default:
 			return Equal
 		}
-		if l.n < other.n {
-			return Lesser
-		}
-		return Greater
 
 	// if both lists, compare an element at a time. If everything equal and this is longer return Greater.
 	// If everything equal but other is longer return Lesser.
