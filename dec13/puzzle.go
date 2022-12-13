@@ -203,7 +203,7 @@ func runP2(in string) int {
 		}
 		signals = append(signals, parseLine(line))
 	}
-	// sort the buggers by using the comparator
+	// sort the signals by using the comparator
 	sort.Slice(signals, func(i, j int) bool {
 		left := signals[i]
 		right := signals[j]
