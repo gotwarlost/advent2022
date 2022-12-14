@@ -150,59 +150,36 @@ func fillGrid(pin *puzzleInput) {
 
 var sentinel = position{-1, -1}
 
-func fallDown(pin *puzzleInput, p position) (landed position) {
-	g := pin.g
-	for {
-		test := position{p.row + 1, p.col}
-		if g.value(test) == 0 {
-			p.row++
-			if p.row >= pin.maxRow {
-				return sentinel
-			}
-			continue
-		}
-		break
-	}
-	if p.col <= pin.minCol {
-		return sentinel
-	}
-	testLeft := position{p.row + 1, p.col - 1}
-	if g.value(testLeft) == 0 {
-		return fallDown(pin, testLeft)
-	}
-	if p.col >= pin.maxCol {
-		return sentinel
-	}
-	testRight := position{p.row + 1, p.col + 1}
-	if g.value(testRight) == 0 {
-		return fallDown(pin, testRight)
-	}
-	return p
-}
-
-func fallDownP2(pin *puzzleInput, p position) (landed position) {
-	g := pin.g
+func fallDown(pin *puzzleInput, p position, isFloor bool) (landed position) {
 	if p.row >= pin.maxRow {
-		return p
-	}
-	for {
-		test := position{p.row + 1, p.col}
-		if g.value(test) == 0 {
-			p.row++
-			if p.row >= pin.maxRow {
-				return p
-			}
-			continue
+		if !isFloor {
+			return sentinel
+		} else {
+			return p
 		}
-		break
 	}
+	if !isFloor {
+		if p.col <= pin.minCol {
+			return sentinel
+		}
+		if p.col >= pin.maxCol {
+			return sentinel
+		}
+	}
+	g := pin.g
+
+	test := position{p.row + 1, p.col}
+	if g.value(test) == 0 {
+		return fallDown(pin, test, isFloor)
+	}
+
 	testLeft := position{p.row + 1, p.col - 1}
 	if g.value(testLeft) == 0 {
-		return fallDownP2(pin, testLeft)
+		return fallDown(pin, testLeft, isFloor)
 	}
 	testRight := position{p.row + 1, p.col + 1}
 	if g.value(testRight) == 0 {
-		return fallDownP2(pin, testRight)
+		return fallDown(pin, testRight, isFloor)
 	}
 	return p
 }
@@ -213,7 +190,7 @@ func runP1(in string) int {
 	fillGrid(pin)
 	count := 0
 	for {
-		pos := fallDown(pin, position{0, 500})
+		pos := fallDown(pin, position{0, 500}, false)
 		if pos == sentinel {
 			break
 		}
@@ -231,7 +208,7 @@ func runP2(in string) int {
 	count := 0
 	for {
 		orig := position{0, 500}
-		pos := fallDownP2(pin, orig)
+		pos := fallDown(pin, orig, true)
 		count++
 		if pos == orig {
 			break

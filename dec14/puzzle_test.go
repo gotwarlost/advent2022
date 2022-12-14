@@ -14,7 +14,7 @@ var testInput string
 
 func TestP1(t *testing.T) {
 	assert.Equal(t, 24, runP1(testInput))
-	assert.Equal(t, 6072, runP1(input))
+	assert.Equal(t, 825, runP1(input))
 }
 
 func TestP2(t *testing.T) {
