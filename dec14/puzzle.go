@@ -150,37 +150,27 @@ func fillGrid(pin *puzzleInput) {
 
 var chasm = position{-1, -1}
 
+var tryOffsets = []position{
+	{row: 1}, {row: 1, col: -1}, {row: 1, col: 1},
+}
+
 func fallDown(pin *puzzleInput, p position, isFloor bool) (landed position) {
-	if p.row >= pin.maxRow {
+	if p.row == pin.maxRow {
 		if !isFloor {
 			return chasm
 		} else {
 			return p
 		}
 	}
-	if !isFloor {
-		if p.col <= pin.minCol {
-			return chasm
-		}
-		if p.col >= pin.maxCol {
-			return chasm
-		}
-	}
 	g := pin.g
 
-	test := position{p.row + 1, p.col}
-	if g.value(test) == 0 {
-		return fallDown(pin, test, isFloor)
+	for _, offset := range tryOffsets {
+		test := position{p.row + offset.row, p.col + offset.col}
+		if g.value(test) == 0 {
+			return fallDown(pin, test, isFloor)
+		}
 	}
 
-	testLeft := position{p.row + 1, p.col - 1}
-	if g.value(testLeft) == 0 {
-		return fallDown(pin, testLeft, isFloor)
-	}
-	testRight := position{p.row + 1, p.col + 1}
-	if g.value(testRight) == 0 {
-		return fallDown(pin, testRight, isFloor)
-	}
 	return p
 }
 
