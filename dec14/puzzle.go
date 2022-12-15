@@ -150,11 +150,7 @@ func fillGrid(pin *puzzleInput) {
 
 var chasm = position{-1, -1}
 
-var tryOffsets = []position{
-	{row: 1}, {row: 1, col: -1}, {row: 1, col: 1},
-}
-
-func fallDown(pin *puzzleInput, p position, isFloor bool) (landed position) {
+func freeFall(pin *puzzleInput, p position, isFloor bool) (landed position) {
 	if p.row == pin.maxRow {
 		if !isFloor {
 			return chasm
@@ -163,11 +159,12 @@ func fallDown(pin *puzzleInput, p position, isFloor bool) (landed position) {
 		}
 	}
 	g := pin.g
+	tryOffsets := []position{{row: 1}, {row: 1, col: -1}, {row: 1, col: 1}}
 
 	for _, offset := range tryOffsets {
 		test := position{p.row + offset.row, p.col + offset.col}
 		if g.value(test) == 0 {
-			return fallDown(pin, test, isFloor)
+			return freeFall(pin, test, isFloor)
 		}
 	}
 
@@ -180,7 +177,7 @@ func runP1(in string) int {
 	fillGrid(pin)
 	count := 0
 	for {
-		pos := fallDown(pin, position{0, 500}, false)
+		pos := freeFall(pin, position{0, 500}, false)
 		if pos == chasm {
 			break
 		}
@@ -198,7 +195,7 @@ func runP2(in string) int {
 	count := 0
 	for {
 		orig := position{0, 500}
-		pos := fallDown(pin, orig, true)
+		pos := freeFall(pin, orig, true)
 		if pos == chasm {
 			panic("chasm not expected in P2")
 		}
