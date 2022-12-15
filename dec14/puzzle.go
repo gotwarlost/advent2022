@@ -158,12 +158,11 @@ func freeFall(pin *puzzleInput, p position, isFloor bool) (landed position) {
 			return p
 		}
 	}
-	g := pin.g
-	tryOffsets := []position{{row: 1}, {row: 1, col: -1}, {row: 1, col: 1}}
 
+	tryOffsets := []int{0, -1, 1}
 	for _, offset := range tryOffsets {
-		test := position{p.row + offset.row, p.col + offset.col}
-		if g.value(test) == 0 {
+		test := position{p.row + 1, p.col + offset}
+		if pin.g.value(test) == 0 {
 			return freeFall(pin, test, isFloor)
 		}
 	}
