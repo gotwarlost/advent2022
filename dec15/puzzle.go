@@ -15,33 +15,6 @@ type minMax struct {
 	max int
 }
 
-func (a minMax) contains(other minMax) bool {
-	return a.min <= other.min && a.max >= other.max
-}
-
-func (a minMax) overlaps(other minMax) bool {
-	if a.contains(other) {
-		return true
-	}
-	return (a.min >= other.min && a.min <= other.max) ||
-		(a.max >= other.min && a.max <= other.max)
-}
-
-func (a minMax) intersects(b minMax) bool {
-	return a.contains(b) || b.contains(a) || a.overlaps(b) || b.overlaps(a)
-}
-
-func (a minMax) union(b minMax) {
-	min := a.min
-	max := a.max
-	if min > b.min {
-		min = b.min
-	}
-	if max < b.max {
-		max = b.max
-	}
-}
-
 //go:embed input.txt
 var input string
 
@@ -71,6 +44,8 @@ type pair struct {
 
 var blank = minMax{-1, -1}
 
+// minMax returns a min and max X coordinate that cannot possibly be beacons for a given y coordinate
+// It returns blank if x coordinates cannot be eliminated
 func (p pair) minMax(y int) minMax {
 	d := p.sensor.manhattanDistance(p.beacon)
 	yDiff := abs(p.sensor.y - y)
@@ -211,6 +186,7 @@ func runP2(in string) int {
 	}
 
 outer:
+	// fix this crazy shit
 	for y := 0; y <= maxY; y++ {
 		var mmList []minMax
 		for _, p := range pin.pairs {
@@ -233,20 +209,22 @@ outer:
 		})
 		// log.Println("Y:", y, "MMLIST:", mmList)
 		x := 0
+
 		for {
-			// log.Println("OX:", x)
-			for {
-				prevX := x
-				for _, mm := range mmList {
-					if x >= mm.min && x <= mm.max {
-						x = mm.max + 1
+			move := func(x int) int {
+				for {
+					prevX := x
+					for _, mm := range mmList {
+						if x >= mm.min && x <= mm.max {
+							x = mm.max + 1
+						}
+					}
+					if prevX == x {
+						return x
 					}
 				}
-				if x == prevX {
-					break
-				}
-				// log.Println("LX:", x)
 			}
+			x = move(x)
 			if x > maxX {
 				continue outer
 			}
