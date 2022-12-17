@@ -3,7 +3,6 @@ package dec16
 import (
 	_ "embed"
 	"fmt"
-	"log"
 	"regexp"
 	"strconv"
 	"strings"
@@ -109,29 +108,21 @@ func (r routeMap) mustGetCost(v1, v2 *valve) int {
 	return c
 }
 
-func visit(valves []*valve, order []int, r routeMap, initialCost int) (pressure int) {
-	pos := order[0]
-	v := valves[pos]
-	prev := v
-
-	timeLeft := 30 - initialCost
-	pressure = v.flow * (timeLeft - 1) // valve flows one minute later
-
-	for i, valveIndex := range order {
-		if i == 0 {
-			continue
-		}
-		v = valves[valveIndex]
-		cost, ok := r.getCost(prev, v)
+func visit(start *valve, valves []*valve, order []int, r routeMap) (pressure int) {
+	timeLeft := 30
+	for _, valveIndex := range order {
+		v := valves[valveIndex]
+		cost, ok := r.getCost(start, v)
 		if !ok {
-			panic(fmt.Errorf("no cost from %s to %s", prev.name, v.name))
+			panic(fmt.Errorf("no cost from %s to %s", start.name, v.name))
 		}
 		timeLeft -= cost + 1
 		if timeLeft <= 0 {
 			break
 		}
-		pressure += v.flow * (timeLeft - 1)
-		prev = v
+		extraPressure := v.flow * timeLeft
+		pressure += extraPressure
+		start = v
 	}
 	return pressure
 }
@@ -140,15 +131,17 @@ func runP1(in string) int {
 	valves := toValves(in)
 
 	var aaValve *valve
-	flowingValves := map[string]*valve{}
-	var flowingValveIndices []int
+	interestingValves := map[string]*valve{}
+	var flowValveIndices []int
 	for i, v := range valves {
 		if v.name == "AA" {
 			aaValve = v
 		}
-		if v.flow > 0 {
-			flowingValves[v.name] = v
-			flowingValveIndices = append(flowingValveIndices, i)
+		if v.flow > 0 || v.name == "AA" {
+			interestingValves[v.name] = v
+			if v.name != "AA" {
+				flowValveIndices = append(flowValveIndices, i)
+			}
 		}
 	}
 
@@ -158,17 +151,14 @@ func runP1(in string) int {
 		if current.name == other.name {
 			return
 		}
-		if flowingValves[other.name] == nil {
+		if interestingValves[other.name] == nil {
 			return
 		}
 		routes.setCost(current, other, score)
 	}
 
-	aaScores := map[string]int{}
-	computePathScores(aaValve, aaScores, 0)
-
 	for _, v1 := range valves {
-		if flowingValves[v1.name] == nil {
+		if interestingValves[v1.name] == nil {
 			continue
 		}
 		scores := map[string]int{}
@@ -181,24 +171,14 @@ func runP1(in string) int {
 		}
 	}
 
-	for r, c := range routes {
-		log.Println(r, "=>", c)
-	}
-
-	ch := itertools.PermutationsInt(flowingValveIndices, len(flowingValveIndices))
+	ch := itertools.PermutationsInt(flowValveIndices, len(flowValveIndices))
 	max := 0
 	for order := range ch {
-		first := valves[order[0]].name
-		aaCost, ok := aaScores[first]
-		if !ok {
-			panic("no route from AA to " + first)
-		}
-		pressure := visit(valves, order, routes, aaCost)
+		pressure := visit(aaValve, valves, order, routes)
 		if pressure > max {
 			max = pressure
 		}
 	}
-
 	return max
 }
 
