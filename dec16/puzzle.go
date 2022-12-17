@@ -3,6 +3,7 @@ package dec16
 import (
 	_ "embed"
 	"fmt"
+	"log"
 	"regexp"
 	"strconv"
 	"strings"
@@ -130,32 +131,21 @@ func visit(start *valve, valves []*valve, order []int, r routeMap) (pressure int
 func runP1(in string) int {
 	valves := toValves(in)
 
-	var aaValve *valve
+	var firstValve *valve
 	interestingValves := map[string]*valve{}
 	var flowValveIndices []int
 	for i, v := range valves {
 		if v.name == "AA" {
-			aaValve = v
-		}
-		if v.flow > 0 || v.name == "AA" {
+			firstValve = v
 			interestingValves[v.name] = v
-			if v.name != "AA" {
-				flowValveIndices = append(flowValveIndices, i)
-			}
+		}
+		if v.flow > 0 {
+			interestingValves[v.name] = v
+			flowValveIndices = append(flowValveIndices, i)
 		}
 	}
 
 	routes := routeMap{}
-
-	addRoute := func(current *valve, other *valve, score int) {
-		if current.name == other.name {
-			return
-		}
-		if interestingValves[other.name] == nil {
-			return
-		}
-		routes.setCost(current, other, score)
-	}
 
 	for _, v1 := range valves {
 		if interestingValves[v1.name] == nil {
@@ -164,19 +154,34 @@ func runP1(in string) int {
 		scores := map[string]int{}
 		computePathScores(v1, scores, 0)
 		for _, v2 := range valves {
+			if v1.name == v2.name {
+				continue
+			}
+			if interestingValves[v2.name] == nil {
+				continue
+			}
 			score, ok := scores[v2.name]
 			if ok {
-				addRoute(v1, v2, score)
+				routes.setCost(v1, v2, score)
 			}
 		}
 	}
 
-	ch := itertools.PermutationsInt(flowValveIndices, len(flowValveIndices))
+	x := len(flowValveIndices)
+	if len(flowValveIndices) > 8 {
+		x = 8
+	}
+	ch := itertools.PermutationsInt(flowValveIndices, x)
 	max := 0
+	count := 0
 	for order := range ch {
-		pressure := visit(aaValve, valves, order, routes)
+		pressure := visit(firstValve, valves, order, routes)
 		if pressure > max {
 			max = pressure
+		}
+		count++
+		if count%1000000 == 0 {
+			log.Println(count / 1000000)
 		}
 	}
 	return max
