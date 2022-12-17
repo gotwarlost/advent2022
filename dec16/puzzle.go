@@ -3,7 +3,6 @@ package dec16
 import (
 	_ "embed"
 	"fmt"
-	"log"
 	"regexp"
 	"strconv"
 	"strings"
@@ -109,8 +108,8 @@ func (r routeMap) mustGetCost(v1, v2 *valve) int {
 	return c
 }
 
-func visit(start *valve, valves []*valve, order []int, r routeMap) (pressure int) {
-	timeLeft := 30
+func visit(start *valve, valves []*valve, order []int, r routeMap, totalTime int) (pressure int) {
+	timeLeft := totalTime
 	for _, valveIndex := range order {
 		v := valves[valveIndex]
 		cost, ok := r.getCost(start, v)
@@ -128,25 +127,61 @@ func visit(start *valve, valves []*valve, order []int, r routeMap) (pressure int
 	return pressure
 }
 
-func runP1(in string) int {
+func without(x map[string]*valve, name string) map[string]*valve {
+	ret := make(map[string]*valve, len(x)-1)
+	for k, v := range x {
+		if k == name {
+			continue
+		}
+		ret[k] = v
+	}
+	return ret
+}
+
+func computeMaxInternal(start *valve, remaining map[string]*valve, routes routeMap, pressure, timeLeft int) (outputPressure int) {
+	max := pressure
+	for _, v := range remaining {
+		p := pressure
+		tl := timeLeft
+		cost := routes.mustGetCost(start, v) + 1
+		tl -= cost
+		if tl <= 0 {
+			continue
+		}
+		p += tl * v.flow
+		outPressure := computeMaxInternal(v, without(remaining, v.name), routes, p, tl)
+		if outPressure > max {
+			max = outPressure
+		}
+	}
+	return max
+}
+
+func computeMax(start *valve, remaining map[string]*valve, routes routeMap, totalTime int) int {
+	return computeMaxInternal(start, remaining, routes, 0, totalTime)
+}
+
+type puzzleContext struct {
+	valves  []*valve
+	first   *valve
+	nonZero map[string]*valve
+	routes  routeMap
+}
+
+func toPuzzleContext(in string) *puzzleContext {
 	valves := toValves(in)
 
 	var firstValve *valve
+	// interesting means non-zero flows plus start valve
 	interestingValves := map[string]*valve{}
-	var flowValveIndices []int
-	for i, v := range valves {
-		if v.name == "AA" {
-			firstValve = v
+	for _, v := range valves {
+		if v.name == "AA" || v.flow > 0 {
 			interestingValves[v.name] = v
-		}
-		if v.flow > 0 {
-			interestingValves[v.name] = v
-			flowValveIndices = append(flowValveIndices, i)
 		}
 	}
+	firstValve = interestingValves["AA"]
 
 	routes := routeMap{}
-
 	for _, v1 := range valves {
 		if interestingValves[v1.name] == nil {
 			continue
@@ -166,29 +201,57 @@ func runP1(in string) int {
 			}
 		}
 	}
+	return &puzzleContext{
+		valves:  valves,
+		first:   firstValve,
+		nonZero: without(interestingValves, "AA"),
+		routes:  routes,
+	}
+}
 
-	x := len(flowValveIndices)
-	if len(flowValveIndices) > 8 {
-		x = 8
-	}
-	ch := itertools.PermutationsInt(flowValveIndices, x)
-	max := 0
-	count := 0
-	for order := range ch {
-		pressure := visit(firstValve, valves, order, routes)
-		if pressure > max {
-			max = pressure
-		}
-		count++
-		if count%1000000 == 0 {
-			log.Println(count / 1000000)
-		}
-	}
+func runP1(in string) int {
+	c := toPuzzleContext(in)
+	max := computeMax(c.first, c.nonZero, c.routes, 30)
 	return max
 }
 
+func split(valves map[string]*valve, indices []string) (left, right map[string]*valve) {
+	left = map[string]*valve{}
+	right = map[string]*valve{}
+	seen := map[string]bool{}
+	for _, k := range indices {
+		left[k] = valves[k]
+		seen[k] = true
+	}
+	for k, v := range valves {
+		if seen[k] {
+			continue
+		}
+		right[k] = v
+	}
+	return left, right
+}
+
 func runP2(in string) int {
-	return 3
+	c := toPuzzleContext(in)
+	maxLen := len(c.nonZero)/2 + 1 // Bernard's nifty trick of taking advantage of mirror images
+	var names []string
+	for k := range c.nonZero {
+		names = append(names, k)
+	}
+	max := 0
+	for i := 1; i < maxLen; i++ {
+		combinations := itertools.CombinationsStr(names, i)
+		for slice := range combinations {
+			left, right := split(c.nonZero, slice)
+			m1 := computeMax(c.first, left, c.routes, 26)
+			m2 := computeMax(c.first, right, c.routes, 26)
+			if m1+m2 > max {
+				max = m1 + m2
+			}
+		}
+	}
+	return max
 }
 
 func RunP1() {
