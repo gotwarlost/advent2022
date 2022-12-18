@@ -22,6 +22,7 @@ import (
 	"github.com/gotwarlost/advent2022/dec14"
 	"github.com/gotwarlost/advent2022/dec15"
 	"github.com/gotwarlost/advent2022/dec16"
+	"github.com/gotwarlost/advent2022/dec17"
 )
 
 type puzzle func()
@@ -57,6 +58,8 @@ var puzzles = map[string]puzzle{
 	"dec15-p2": dec15.RunP2,
 	"dec16-p1": dec16.RunP1,
 	"dec16-p2": dec16.RunP2,
+	"dec17-p1": dec17.RunP1,
+	"dec17-p2": dec17.RunP2,
 }
 
 func names() []string {
