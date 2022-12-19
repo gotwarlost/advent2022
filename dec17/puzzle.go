@@ -1,11 +1,11 @@
 package dec17
 
 import (
+	"crypto/sha1"
 	_ "embed"
+	"encoding/hex"
 	"fmt"
-	"log"
 	"strings"
-	"time"
 )
 
 //go:embed input.txt
@@ -99,7 +99,7 @@ func (r *rock) prettyPrint(left, towerWidth int) {
 		l := lines[i]
 		for _, x := range l {
 			if x == 1 {
-				fmt.Print("X")
+				fmt.Print("o")
 			} else {
 				fmt.Print(".")
 			}
@@ -108,10 +108,7 @@ func (r *rock) prettyPrint(left, towerWidth int) {
 	}
 }
 
-var (
-	lastRock         *rock
-	numDistinctRocks int
-)
+var lastRock *rock
 
 func init() {
 	// note: rocks are rendered bottom to top because we are moving "up"
@@ -166,7 +163,6 @@ func init() {
 		}
 	}
 	lastRock = rocks[len(rocks)-1]
-	numDistinctRocks = len(rocks)
 }
 
 type push struct {
@@ -175,7 +171,7 @@ type push struct {
 	index int
 }
 
-func toPushes(in string) (*push, int) {
+func toPushes(in string) *push {
 	vals := strings.Split(strings.TrimSpace(in), "")
 	var seq []*push
 	for i, v := range vals {
@@ -196,7 +192,7 @@ func toPushes(in string) (*push, int) {
 			seq[i].next = seq[i+1]
 		}
 	}
-	return seq[len(seq)-1], len(seq)
+	return seq[len(seq)-1]
 }
 
 func prettyPrint(t [][]int, lastn int) {
@@ -220,16 +216,35 @@ func prettyPrint(t [][]int, lastn int) {
 
 const noValue = -1
 
-func runP1(in string) int {
-	numRocks := 100000000
-	start := time.Now()
-	defer func() {
-		log.Println("Elapsed for:", numRocks, time.Since(start))
-	}()
+type foundState struct {
+	rockNum int64
+	height  int64
+}
+
+func run(in string, numRocks int64) int64 {
 	theRock := lastRock
-	p, numPushes := toPushes(in)
+	p := toPushes(in)
 	towerWidth := 7
 	var tower [][]int
+
+	computeState := func() string {
+		lookBehind := 10
+		if len(tower) < lookBehind {
+			return ""
+		}
+		h := sha1.New()
+		write := func(x interface{}) {
+			_, _ = h.Write([]byte(fmt.Sprint(x)))
+		}
+		write(theRock.index)
+		write(p.index)
+		for _, line := range tower[len(tower)-lookBehind:] {
+			for _, x := range line {
+				write(x)
+			}
+		}
+		return hex.EncodeToString(h.Sum(nil))
+	}
 
 	valueAtIndex := func(row, col int) int {
 		if row < 0 {
@@ -247,39 +262,37 @@ func runP1(in string) int {
 		return tower[row][col]
 	}
 
-	log.Println("NUM ROCKS:", numDistinctRocks, "NUM PUSHES", numPushes, "MULT:", numPushes*numDistinctRocks)
+	seen := map[string]foundState{}
 
-	count := 0
-	n := 0
-	fmt.Println("N,R,H,H-DERIVED")
-	for rockNum := 0; rockNum < numRocks; rockNum++ {
-
-		// prettyPrint(tower)
+	addHeight := int64(0)
+	rockNum := int64(0)
+	checking := true
+	for rockNum = 0; rockNum < numRocks; rockNum++ {
 		theRock = theRock.next
 		top := len(tower) + 3
 		left := 2
 
+		state := computeState()
+		if checking && state != "" {
+			if prev, ok := seen[state]; ok {
+				rockCycle := rockNum - prev.rockNum
+				heightForInterval := int64(len(tower)) - prev.height
+				remainingRocks := numRocks - rockNum
+				div := remainingRocks / rockCycle
+				rem := remainingRocks % rockCycle
+				addHeight = div * heightForInterval
+				rockNum = numRocks - rem
+				checking = false
+			} else {
+				seen[state] = foundState{
+					rockNum: rockNum,
+					height:  int64(len(tower)),
+				}
+			}
+		}
 	rockFall:
 		for {
 			p = p.next
-			count++
-			if count%(numDistinctRocks*numPushes) == 0 {
-				n++
-				h := len(tower)
-				d := 13545*n + 12
-				diff := d - h
-				if diff != 0 {
-					panic(fmt.Errorf("n: %d, diff=%d", n, diff))
-				}
-				fmt.Printf(`"%d","%d","%d","%d"`+"\n", n, rockNum+1, h, d)
-				// log.Println("N=", n, "H=", h, "DERIVED")
-				// prettyPrint(tower[len(tower)-15:])
-				// time.Sleep(time.Second)
-			}
-
-			if count == 13345 {
-				log.Println("TOWER HEIGHT AT 13345", len(tower))
-			}
 
 			switch p.dir {
 			case dirLeft:
@@ -339,9 +352,7 @@ func runP1(in string) int {
 					lhs := line1[i]
 					rhs := line2[i]
 					if lhs+rhs > 1 {
-						log.Println("L1:", line1)
-						log.Println("L2:", line2)
-						panic("mismatch 2")
+						panic(fmt.Errorf("union mismatch: %v, %v", line1, line2))
 					}
 					if lhs == 1 || rhs == 1 {
 						ret = append(ret, 1)
@@ -367,17 +378,15 @@ func runP1(in string) int {
 			break rockFall
 		}
 	}
-	return len(tower)
-}
-
-func runP2(in string) int {
-	return 0
+	return int64(len(tower)) + addHeight
 }
 
 func RunP1() {
-	fmt.Println(runP1(input))
+	fmt.Println(run(input, 2022))
 }
 
+const gazillion int64 = 1000000000000
+
 func RunP2() {
-	fmt.Println(runP2(input))
+	fmt.Println(run(input, gazillion))
 }
