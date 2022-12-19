@@ -262,3 +262,11 @@ func run(in string, checkEnclosed bool) int {
 	area -= len(surfacesToRemove)
 	return area
 }
+
+func RunP1() {
+	fmt.Println(run(input, false))
+}
+
+func RunP2() {
+	fmt.Println(run(input, true))
+}
