@@ -37,10 +37,6 @@ In the above example, after counting up all the sides that aren't connected to a
 
 What is the surface area of your scanned lava droplet?
 
-To begin, get your puzzle input.
-
-Answer:
-
 --- Part Two ---
 
 Something seems off about your calculation. The cooling rate depends on exterior surface area,
@@ -54,6 +50,3 @@ In the larger example above, exactly one cube of air is trapped within the lava 
 so the exterior surface area of the lava droplet is 58.
 
 What is the exterior surface area of your scanned lava droplet?
-
-
-You can also [Share] this puzzle.
