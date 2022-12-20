@@ -16,11 +16,14 @@ type cell struct {
 	prev  *cell
 }
 
+func (c *cell) setNext(next *cell) {
+	c.next = next
+	next.prev = c
+}
+
 type ring struct {
 	cellMap   map[int]*cell
 	zeroValue *cell
-	head      *cell
-	tail      *cell
 	length    int
 }
 
@@ -39,6 +42,7 @@ func toCells(in string, mult int) *ring {
 		cellMap: map[int]*cell{},
 		length:  len(numbers),
 	}
+	var head, tail *cell
 	for i, num := range numbers {
 		c := &cell{value: int64(num) * int64(mult)}
 		ret.cellMap[i] = c
@@ -49,16 +53,14 @@ func toCells(in string, mult int) *ring {
 			ret.zeroValue = c
 		}
 		if i == 0 {
-			ret.head = c
-			ret.tail = c
+			head = c
+			tail = c
 		} else {
-			ret.tail.next = c
-			c.prev = ret.tail
-			ret.tail = c
+			tail.setNext(c)
+			tail = c
 		}
 	}
-	ret.head.prev = ret.tail
-	ret.tail.next = ret.head
+	tail.setNext(head)
 	return ret
 }
 
@@ -82,24 +84,17 @@ func run(in string, mult int, times int) int64 {
 					// prev2 -> prev -> c -> next
 					// prev2 -> c -> prev -> next
 					prev2 := c.prev.prev
-					c.prev = prev2
-					prev2.next = c
-
-					c.next = oldPrev
-					oldPrev.prev = c
+					prev2.setNext(c)
+					c.setNext(oldPrev)
 
 				default:
 					// prev -> c -> next -> next2
 					// prev -> next -> c -> next2
 					next2 := c.next.next
-					c.prev = oldNext
-					oldNext.next = c
-
-					c.next = next2
-					next2.prev = c
+					oldNext.setNext(c)
+					c.setNext(next2)
 				}
-				oldPrev.next = oldNext
-				oldNext.prev = oldPrev
+				oldPrev.setNext(oldNext)
 			}
 		}
 	}
