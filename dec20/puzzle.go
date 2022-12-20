@@ -54,11 +54,10 @@ func toCells(in string, mult int) *ring {
 		}
 		if i == 0 {
 			head = c
-			tail = c
 		} else {
 			tail.setNext(c)
-			tail = c
 		}
+		tail = c
 	}
 	tail.setNext(head)
 	return ret
@@ -100,18 +99,10 @@ func run(in string, mult int, times int) int64 {
 	}
 
 	curr := cells.zeroValue
-	var vals []int64
 	total := int64(0)
 	for i := 0; i <= 3000; i++ {
 		switch i {
-		case 1000:
-			vals = append(vals, curr.value)
-			total += curr.value
-		case 2000:
-			vals = append(vals, curr.value)
-			total += curr.value
-		case 3000:
-			vals = append(vals, curr.value)
+		case 1000, 2000, 3000:
 			total += curr.value
 		}
 		curr = curr.next
