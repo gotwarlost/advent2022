@@ -177,16 +177,12 @@ func runP1(in string) int64 {
 }
 
 func hasDep(root *monkey, name string) bool {
-	if !root.expr {
-		if root.name == name {
-			return true
-		}
-		return false
+	switch root.expr {
+	case false:
+		return root.name == name
+	default:
+		return hasDep(root.left, name) || hasDep(root.right, name)
 	}
-	if root.left.name == name || root.right.name == name {
-		return true
-	}
-	return hasDep(root.left, name) || hasDep(root.right, name)
 }
 
 func reverseEval(root *monkey, result int64, name string) int64 {

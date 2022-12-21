@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"os"
 	"regexp"
 	"sort"
 	"strconv"
@@ -72,21 +73,23 @@ var (
 type Need struct {
 	Thing Thing `json:"thing"`
 	Count int   `json:"count"`
+	Ores  int   `json:"ores"`
 }
 
 type BotSpec struct {
-	Bot   Robot         `json:"bot"`
-	Needs map[Thing]int `json:"needs"`
+	Bot   Robot `json:"bot"`
+	Needs Need  `json:"needs"`
 }
 
-type Blueprint struct {
-	ID   int       `json:"id"`
-	Bots []BotSpec `json:"bots"`
+type BlueprintX struct {
+	ID      int       `json:"id"`
+	Bots    []BotSpec `json:"bots"`
+	MaxOres int       `json:"maxOres"`
 }
 
-func (b Blueprint) Needs(t Robot) map[Thing]int {
+func (b BlueprintX) Needs(t Robot) Need {
 	if t.Product() == Nothing {
-		return map[Thing]int{}
+		return Need{}
 	}
 	for _, c := range b.Bots {
 		if c.Bot == t {
@@ -96,31 +99,81 @@ func (b Blueprint) Needs(t Robot) map[Thing]int {
 	panic("must find dep")
 }
 
-type State struct {
-	print     *Blueprint
-	Remaining int           `json:"remaining"`
-	Resources map[Thing]int `json:"resources"`
-	Bots      map[Robot]int `json:"bots"`
+type StateX struct {
+	bp        *BlueprintX
+	Remaining int            `json:"remaining"`
+	Resources map[Thing]int  `json:"resources"`
+	Bots      map[Robot]int  `json:"bots"`
+	Skipped   map[Robot]bool `json:"skipped"`
 }
 
-func newState(print *Blueprint, remaining int) State {
-	return State{
-		print:     print,
+func newState(bp *BlueprintX, remaining int) StateX {
+	return StateX{
+		bp:        bp,
 		Remaining: remaining,
 		Resources: map[Thing]int{},
 		Bots:      map[Robot]int{},
+		Skipped:   map[Robot]bool{},
 	}
 }
 
-func (s State) clone() State {
-	ret := newState(s.print, s.Remaining)
+func (s StateX) clone() StateX {
+	ret := newState(s.bp, s.Remaining)
 	for k, v := range s.Resources {
 		ret.Resources[k] = v
 	}
 	for k, v := range s.Bots {
 		ret.Bots[k] = v
 	}
+	for k, v := range s.Skipped {
+		ret.Skipped[k] = v
+	}
 	return ret
+}
+
+func (s StateX) ShouldSkip(bot Robot) bool {
+	// never skip these
+	if bot == NothingBot || bot == GeodeBot {
+		return false
+	}
+	if s.Skipped[bot] { // skipped once, skip forever
+		return true
+	}
+	switch bot {
+	case OreBot:
+		return s.Bots[OreBot] >= s.bp.MaxOres
+	case ClayBot:
+		return s.Bots[ClayBot] >= s.bp.Needs(ObsidianBot).Count
+	case ObsidianBot:
+		return s.Bots[ObsidianBot] >= s.bp.Needs(GeodeBot).Count
+	}
+	panic("unreachable")
+}
+
+type cacheKey struct {
+	remaining    int
+	geodes       int
+	obsidian     int
+	clay         int
+	ores         int
+	geodeBots    int
+	obsidianBots int
+	clayBots     int
+	oreBots      int
+}
+
+func (s StateX) key() cacheKey {
+	return cacheKey{
+		remaining:    s.Remaining,
+		geodes:       s.Resources[Geode],
+		obsidian:     s.Resources[Obsidian],
+		clay:         s.Resources[Clay],
+		ores:         s.Resources[Ore],
+		geodeBots:    s.Bots[GeodeBot],
+		obsidianBots: s.Bots[ObsidianBot],
+		clayBots:     s.Bots[ClayBot],
+		oreBots:      s.Bots[OreBot],
+	}
 }
 
 type botErr struct {
@@ -131,16 +184,25 @@ func (b botErr) Error() string {
 	return fmt.Sprintf("unsatisfiable %q", b.unsatisfiable)
 }
 
-func (s State) NextWith(bot Robot) (State, error) {
+func (s StateX) NextWith(bot Robot) (StateX, error) {
 	ret := s.clone()
-	needs := ret.print.Needs(bot)
+	needs := ret.bp.Needs(bot)
 	var uns []Thing
-	for thing, want := range needs {
+	thing := needs.Thing
+	if thing != Nothing {
+		want := needs.Count
 		have := ret.Resources[thing]
 		if have < want {
 			uns = append(uns, thing)
 		}
 		ret.Resources[thing] -= want
+	}
+	if needs.Ores > 0 {
+		have := ret.Resources[Ore]
+		if have < needs.Ores {
+			uns = append(uns, thing)
+		}
+		ret.Resources[Ore] -= needs.Ores
 	}
 	if len(uns) > 0 {
 		sort.Slice(uns, func(i, j int) bool {
@@ -158,14 +220,14 @@ func (s State) NextWith(bot Robot) (State, error) {
 	return ret, nil
 }
 
-func (s State) String() string {
+func (s StateX) String() string {
 	return fmt.Sprintf("\tRemaining: %d\n\tResources: %v\n\tRobots: %v", s.Remaining, s.Resources, s.Bots)
 }
 
 var blueRE = regexp.MustCompile(`Blueprint (\d+): Each ore robot costs (\d+) ore. Each clay robot costs (\d+) ore. Each obsidian robot costs (\d+) ore and (\d+) clay. Each geode robot costs (\d+) ore and (\d+) obsidian.`)
 
-func toBlueprints(in string) []Blueprint {
-	var ret []Blueprint
+func toBlueprints(in string) []BlueprintX {
+	var ret []BlueprintX
 	for _, line := range strings.Split(strings.TrimSpace(in), "\n") {
 		m := blueRE.FindStringSubmatch(line)
 		if m == nil {
@@ -178,33 +240,35 @@ func toBlueprints(in string) []Blueprint {
 			}
 			return n
 		}
-		b := Blueprint{
+		b := BlueprintX{
 			ID: mustInt(m[1]),
 			Bots: []BotSpec{
 				{
 					Bot: OreBot,
-					Needs: map[Thing]int{
-						Ore: mustInt(m[2]),
+					Needs: Need{
+						Ores: mustInt(m[2]),
 					},
 				},
 				{
 					Bot: ClayBot,
-					Needs: map[Thing]int{
-						Ore: mustInt(m[3]),
+					Needs: Need{
+						Ores: mustInt(m[3]),
 					},
 				},
 				{
 					Bot: ObsidianBot,
-					Needs: map[Thing]int{
-						Ore:  mustInt(m[4]),
-						Clay: mustInt(m[5]),
+					Needs: Need{
+						Ores:  mustInt(m[4]),
+						Thing: Clay,
+						Count: mustInt(m[5]),
 					},
 				},
 				{
 					Bot: GeodeBot,
-					Needs: map[Thing]int{
-						Ore:      mustInt(m[6]),
-						Obsidian: mustInt(m[7]),
+					Needs: Need{
+						Ores:  mustInt(m[6]),
+						Thing: Obsidian,
+						Count: mustInt(m[7]),
 					},
 				},
 			},
@@ -214,51 +278,75 @@ func toBlueprints(in string) []Blueprint {
 			right := b.Bots[j]
 			return left.Bot.Value() > right.Bot.Value()
 		})
+		maxOres := 0
+		for _, bot := range b.Bots {
+			if bot.Needs.Ores > maxOres {
+				maxOres = bot.Needs.Ores
+			}
+		}
+		b.MaxOres = maxOres
 		ret = append(ret, b)
 	}
 	return ret
 }
 
-var counter int
+var counter, hits int
 
-func bestPath(state State) State {
+func bestState(state StateX, cache map[cacheKey]StateX) StateX {
+	addToCache := func(s StateX) StateX {
+		cache[s.key()] = s
+		return s
+	}
 	if state.Remaining == 0 {
-		return state
+		return addToCache(state)
+	}
+	cs := state.key()
+	if s, ok := cache[cs]; ok {
+		hits++
+		if hits%1000 == 0 {
+			fmt.Print("H", hits/1000, "... ")
+		}
+		return s
 	}
 	counter++
 	if counter%1000000 == 0 {
-		fmt.Print(counter/1000000, "... ")
+		fmt.Fprint(os.Stderr, counter/1000000, "... ")
 	}
 
-	nextOres := func() State {
-		s2, _ := state.NextWith(NothingBot)
-		s2 = bestPath(s2)
-		next, err := state.NextWith(OreBot)
-		if err != nil {
-			return s2
-		}
-		s1 := bestPath(next)
-		if s1.Resources[Geode] > s2.Resources[Geode] {
-			return s1
-		} else {
-			return s2
+	clone := state.clone()
+	for _, c := range []Robot{ObsidianBot, ClayBot, OreBot} {
+		if state.ShouldSkip(c) {
+			clone.Skipped[c] = true
 		}
 	}
+	state = clone
 
-	bot := GeodeBot
-	for {
-		next, err := state.NextWith(bot)
+	bots := []Robot{GeodeBot, ObsidianBot, ClayBot, OreBot, NothingBot}
+	var candidates []StateX
+	for _, b := range bots {
+		if state.Skipped[b] {
+			continue
+		}
+		next, err := state.NextWith(b)
 		if err == nil {
-			return bestPath(next)
-		}
-		bot = err.(*botErr).unsatisfiable.toBot()
-		if bot == OreBot {
-			return nextOres()
+			if b == GeodeBot {
+				return bestState(next, cache)
+			}
+			candidates = append(candidates, next)
 		}
 	}
+	var outputStates []StateX
+	for _, c := range candidates {
+		best := addToCache(bestState(c, cache))
+		outputStates = append(outputStates, best)
+	}
+	sort.Slice(outputStates, func(i, j int) bool {
+		return outputStates[i].Resources[Geode] > outputStates[j].Resources[Geode]
+	})
+	return outputStates[0]
 }
 
-func runBlueprint(b Blueprint, iterations int) int {
+func runBlueprint(b BlueprintX, iterations int) int {
 	counter = 0
 	state := newState(&b, iterations)
 	state.Bots = map[Robot]int{
@@ -267,7 +355,10 @@ func runBlueprint(b Blueprint, iterations int) int {
 
 	log.Println("Blueprint", b.ID)
 	log.Println("----------")
-	best := bestPath(state)
+	x, _ := json.MarshalIndent(b, "", "  ")
+	log.Println(string(x))
+	best := bestState(state, map[cacheKey]StateX{})
+	log.Println()
 	log.Println(best)
 	log.Println("tried", counter, "possibilities")
 	return best.Resources[Geode]
@@ -277,13 +368,11 @@ func runP1(in string) int {
 	log.SetFlags(0)
 	mins := 24
 	prints := toBlueprints(in)
-	x, _ := json.MarshalIndent(prints, "", "  ")
-	log.Println(string(x))
 
 	output := 0
 	for _, p := range prints {
 		geodes := runBlueprint(p, mins)
-		fmt.Println()
+		log.Println()
 		output += geodes * p.ID
 		log.Printf("G: %d, I: %d, o: %d, O: %d", geodes, p.ID, geodes*p.ID, output)
 	}
@@ -295,7 +384,7 @@ func runP2(in string) int {
 }
 
 func RunP1() {
-	fmt.Println(runP1(input))
+	solve()
 }
 
 func RunP2() {
