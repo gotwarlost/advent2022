@@ -193,18 +193,19 @@ func reverseEval(root *monkey, result int64, name string) int64 {
 	var leftKnown bool
 	var eval *monkey
 	var operand int64
-	if leftDep && rightDep {
+	switch {
+	case leftDep && rightDep:
 		panic("human all over the place!")
-	} else if leftDep {
+	case leftDep:
 		eval = l
 		operand = toNumber(r)
 		leftKnown = false
-	} else if rightDep {
+	case rightDep:
 		eval = r
 		operand = toNumber(l)
 		leftKnown = true
-	} else {
-		panic(fmt.Sprintf("no human at reverseEval"))
+	default:
+		panic("human all over the place!")
 	}
 
 	newResult := root.op.reverseApply(result, operand, leftKnown)
