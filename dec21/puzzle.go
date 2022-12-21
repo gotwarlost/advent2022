@@ -189,8 +189,6 @@ func hasDep(root *monkey, name string) bool {
 	return hasDep(root.left, name) || hasDep(root.right, name)
 }
 
-var stack = 0
-
 func reverseEval(root *monkey, result int64, name string) int64 {
 	l := root.left
 	r := root.right
@@ -210,7 +208,7 @@ func reverseEval(root *monkey, result int64, name string) int64 {
 		operand = toNumber(l)
 		leftKnown = true
 	} else {
-		panic(fmt.Sprintf("no human at STACK: %d", stack))
+		panic(fmt.Sprintf("no human at reverseEval"))
 	}
 
 	newResult := root.op.reverseApply(result, operand, leftKnown)
