@@ -283,32 +283,72 @@ func (g *Grid) moveRegion(current region, from Point, dir Direction) (region, Po
 		targetEdge = g.routes[regionEdge{current, eBottom}]
 	}
 
-	row := localInPoint.row
-	col := localInPoint.col
+	flip := func(i int) int {
+		return g.regionSize - 1 - i
+	}
+
+	// implement rotation the hard way :(
+	var row, col int
 	switch targetEdge.edge {
 	case eLeft:
 		col = 0
 		outDir = dirRight
-		if dir == dirUp || dir == dirDown {
+		switch dir {
+		case dirLeft:
+			row = flip(localInPoint.row)
+		case dirUp:
 			row = localInPoint.col
-		}
-	case eRight:
-		col = g.regionSize - 1
-		outDir = dirLeft
-		if dir == dirUp || dir == dirDown {
-			row = localInPoint.col
+		case dirRight:
+			row = localInPoint.row
+		case dirDown:
+			row = flip(localInPoint.col)
+		default:
+			panic("1")
 		}
 	case eTop:
 		row = 0
 		outDir = dirDown
-		if dir == dirLeft || dir == dirRight {
+		switch dir {
+		case dirLeft:
 			col = localInPoint.row
+		case dirUp:
+			col = flip(localInPoint.col)
+		case dirRight:
+			col = flip(localInPoint.row)
+		case dirDown:
+			col = localInPoint.col
+		default:
+			panic("2")
+		}
+	case eRight:
+		col = g.regionSize - 1
+		outDir = dirLeft
+		switch dir {
+		case dirLeft:
+			row = localInPoint.row
+		case dirUp:
+			row = flip(localInPoint.col)
+		case dirRight:
+			row = flip(localInPoint.row)
+		case dirDown:
+			row = localInPoint.col
+		default:
+			panic("3")
 		}
 	case eBottom:
 		row = g.regionSize - 1
 		outDir = dirUp
-		if dir == dirLeft || dir == dirRight {
+		switch dir {
+		case dirLeft:
+			col = flip(localInPoint.row)
+		case dirUp:
+			col = localInPoint.col
+		case dirRight:
 			col = localInPoint.row
+		case dirDown:
+			col = flip(localInPoint.col)
+		default:
+			panic("4")
 		}
 	}
 	return targetEdge.region, g.toGridCoords(targetEdge.region, Point{row, col}), outDir
