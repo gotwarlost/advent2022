@@ -75,36 +75,22 @@ func (d Direction) String() string {
 }
 
 func (d Direction) Rotate(rot Rotation) Direction {
+	v := int(d)
 	switch rot {
 	case RotLeft:
-		switch d {
-		case dirRight:
-			return dirUp
-		case dirUp:
-			return dirLeft
-		case dirLeft:
-			return dirDown
-		case dirDown:
-			return dirRight
-		default:
-			panic("bad dir")
+		v--
+		if v < 0 {
+			v = int(dirUp)
 		}
 	case RotRight:
-		switch d {
-		case dirRight:
-			return dirDown
-		case dirUp:
-			return dirRight
-		case dirLeft:
-			return dirUp
-		case dirDown:
-			return dirLeft
-		default:
-			panic("bad dir")
+		v++
+		if v > int(dirUp) {
+			v = 0
 		}
 	default:
 		panic("bad rot")
 	}
+	return Direction(v)
 }
 
 type Point struct {
@@ -158,6 +144,8 @@ type Grid struct {
 	positions     [][]Cell
 	walkLocation  Point
 	walkDirection Direction
+	regionSize    int
+	routes        map[regionEdge]regionEdge
 }
 
 func (g *Grid) String() string {
@@ -214,7 +202,7 @@ func (g *Grid) lastNonEmptyRow(col int) int {
 	panic("all empty")
 }
 
-func (g *Grid) next(pos Point, dir Direction) (Point, bool) {
+func (g *Grid) nextP1(pos Point, dir Direction) (Point, bool) {
 	p := pos.next(dir)
 	switch dir {
 	case dirRight:
@@ -240,18 +228,129 @@ func (g *Grid) next(pos Point, dir Direction) (Point, bool) {
 	return p, true
 }
 
-func (g *Grid) apply(m Move) {
+func (g *Grid) applyP1(m Move) {
 	if m.Type == MoveTurn {
 		g.walkDirection = g.walkDirection.Rotate(m.Rotation)
 		return
 	}
 	for i := 0; i < m.Steps; i++ {
-		nextPos, found := g.next(g.walkLocation, g.walkDirection)
+		nextPos, found := g.nextP1(g.walkLocation, g.walkDirection)
 		if !found {
 			break
 		}
 		g.walkLocation = nextPos
 	}
+}
+
+func (g *Grid) regionFor(point Point) (region, error) {
+	rRows := g.rows / g.regionSize
+	rCols := g.cols / g.regionSize
+	for rRow := 0; rRow < rRows; rRow++ {
+		for rCol := 0; rCol < rCols; rCol++ {
+			rowStart := rRow * g.regionSize
+			colStart := rCol * g.regionSize
+			rowEnd := rowStart + g.regionSize
+			colEnd := colStart + g.regionSize
+			if point.row >= rowStart && point.row < rowEnd && point.col >= colStart && point.col < colEnd {
+				return region{rRow, rCol}, nil
+			}
+		}
+	}
+	return region{}, fmt.Errorf("point %v not in any region", point)
+}
+
+func (g *Grid) toRegionCoords(gridPoint Point) Point {
+	return Point{gridPoint.row % g.regionSize, gridPoint.col % g.regionSize}
+}
+
+func (g *Grid) toGridCoords(r region, regionPoint Point) Point {
+	return Point{r.row*g.regionSize + regionPoint.row, r.col*g.regionSize + regionPoint.col}
+}
+
+func (g *Grid) moveRegion(current region, from Point, dir Direction) (region, Point, Direction) {
+	var targetEdge regionEdge
+	var outDir Direction
+
+	localInPoint := g.toRegionCoords(from)
+	switch dir {
+	case dirLeft:
+		targetEdge = g.routes[regionEdge{current, eLeft}]
+	case dirRight:
+		targetEdge = g.routes[regionEdge{current, eRight}]
+	case dirUp:
+		targetEdge = g.routes[regionEdge{current, eTop}]
+	case dirDown:
+		targetEdge = g.routes[regionEdge{current, eBottom}]
+	}
+
+	row := localInPoint.row
+	col := localInPoint.col
+	switch targetEdge.edge {
+	case eLeft:
+		col = 0
+		outDir = dirRight
+		if dir == dirUp || dir == dirDown {
+			row = localInPoint.col
+		}
+	case eRight:
+		col = g.regionSize - 1
+		outDir = dirLeft
+		if dir == dirUp || dir == dirDown {
+			row = localInPoint.col
+		}
+	case eTop:
+		row = 0
+		outDir = dirDown
+		if dir == dirLeft || dir == dirRight {
+			col = localInPoint.row
+		}
+	case eBottom:
+		row = g.regionSize - 1
+		outDir = dirUp
+		if dir == dirLeft || dir == dirRight {
+			col = localInPoint.row
+		}
+	}
+	return targetEdge.region, g.toGridCoords(targetEdge.region, Point{row, col}), outDir
+}
+
+func (g *Grid) regionStartRow(r region) int { return g.regionSize * r.row }
+func (g *Grid) regionEndRow(r region) int   { return g.regionSize*r.row + g.regionSize - 1 }
+func (g *Grid) regionStartCol(r region) int { return g.regionSize * r.col }
+func (g *Grid) regionEndCol(r region) int   { return g.regionSize*r.col + g.regionSize - 1 }
+
+func (g *Grid) nextP2(walk Move) {
+	currentRegion, err := g.regionFor(g.walkLocation)
+	if err != nil {
+		panic(err)
+	}
+	for i := 0; i < walk.Steps; i++ {
+		pos := g.walkLocation
+		dir := g.walkDirection
+		p := pos.next(dir)
+
+		r, err := g.regionFor(p)
+		if err != nil || currentRegion != r {
+			r, p, dir = g.moveRegion(currentRegion, pos, dir)
+		}
+		if g.Value(p) == cellVoid {
+			panic("no void expected")
+		}
+		if g.Value(p) == cellWall {
+			return // leave everything as-is
+		}
+		currentRegion = r
+		g.walkLocation = p
+		g.walkDirection = dir
+	}
+}
+
+func (g *Grid) applyP2(m Move) {
+	if m.Type == MoveTurn {
+		g.walkDirection = g.walkDirection.Rotate(m.Rotation)
+		return
+	}
+	g.nextP2(m)
 }
 
 type PuzzleInput struct {
@@ -299,7 +398,14 @@ func toPuzzleInput(in string) *PuzzleInput {
 		grid.positions = append(grid.positions, row)
 	}
 	grid.rows = len(grid.positions)
-
+	leading := grid.rows
+	if grid.cols > leading {
+		leading = grid.cols
+	}
+	if leading%4 != 0 {
+		panic("4X3 matrix expected")
+	}
+	grid.regionSize = leading / 4
 	instructions := lines[len(lines)-1]
 
 	var moves []Move
@@ -364,14 +470,39 @@ func runP1(in string) int {
 	g.walkDirection = dirRight
 
 	for _, move := range m {
-		g.apply(move)
+		g.applyP1(move)
 	}
 
 	return 1000*(g.walkLocation.row+1) + 4*(g.walkLocation.col+1) + int(g.walkDirection)
 }
 
-func runP2(in string) int64 {
-	return 0
+func runP2(in string, routes map[regionEdge]regionEdge) int {
+	log.SetFlags(0)
+	pin := toPuzzleInput(in)
+	g := pin.grid
+	g.routes = routes
+	m := pin.moves
+	firstCol := -1
+
+	for i, c := range g.positions[0] {
+		if c == cellOpen {
+			firstCol = i
+			break
+		}
+	}
+	if firstCol == -1 {
+		panic("no start position")
+	}
+
+	g.walkLocation = Point{row: 0, col: firstCol}
+	g.walkDirection = dirRight
+	log.Println("WALKLOC:", g.walkLocation, g.toRegionCoords(g.walkLocation), g.walkDirection)
+	log.Println(g.regionFor(g.walkLocation))
+	for _, move := range m {
+		g.applyP2(move)
+	}
+
+	return 1000*(g.walkLocation.row+1) + 4*(g.walkLocation.col+1) + int(g.walkDirection)
 }
 
 func RunP1() {
@@ -379,5 +510,5 @@ func RunP1() {
 }
 
 func RunP2() {
-	fmt.Println(runP2(input))
+	fmt.Println(runP2(input, mainRouteMap()))
 }
