@@ -208,11 +208,9 @@ func toCollection(in string) *Collection {
 func runP1(in string) int {
 	coll := toCollection(in)
 	dl := dirList([]Direction{North, South, West, East})
-	coll.print("start")
 	for i := 0; i < 10; i++ {
 		coll, _ = coll.next(dl)
 		dl = dl.next()
-		coll.print(fmt.Sprintf("i:%d", i))
 	}
 	min, max := coll.boundingBox()
 	count := (max.row-min.row+1)*(max.col-min.col+1) - len(coll.elves)
