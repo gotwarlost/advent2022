@@ -307,45 +307,43 @@ func (m Move) next(gm *GridMovie, goal Point, stats *Stats) {
 	}
 }
 
-func crossOnce(g *Grid, start, goal Point, budget int) (*GridMovie, int) {
+func crossOnce(g *Grid, start, goal Point) (*GridMovie, int) {
 	gm := &GridMovie{
 		grids: map[int]*Grid{0: g},
 		last:  0,
 	}
-	s := &Stats{bestTime: budget, seenMoves: map[Move]bool{}}
+	s := &Stats{bestTime: 5000, seenMoves: map[Move]bool{}}
 	m := Move{point: start}
 	m.next(gm, goal, s)
 	return gm, s.bestTime
 }
 
-func runP1(in string, budget int) int {
+func runP1(in string) int {
 	log.SetFlags(0)
 	g := toGrid(in)
 	log.Println(g)
-	_, best := crossOnce(g, g.entrance, g.exit, budget)
+	_, best := crossOnce(g, g.entrance, g.exit)
 	return best
 }
 
-func runP2(in string, budget int) int {
+func runP2(in string) int {
 	log.SetFlags(0)
 	g := toGrid(in)
-	gm, best1 := crossOnce(g, g.entrance, g.exit, budget)
+	gm, best1 := crossOnce(g, g.entrance, g.exit)
 	g = gm.gridFor(best1)
 	log.Println("B1:", best1)
-	gm, best2 := crossOnce(g, g.exit, g.entrance, budget)
+	gm, best2 := crossOnce(g, g.exit, g.entrance)
 	g = gm.gridFor(best2)
 	log.Println("B2:", best2)
-	gm, best3 := crossOnce(g, g.entrance, g.exit, budget)
+	gm, best3 := crossOnce(g, g.entrance, g.exit)
 	log.Println("B3:", best3)
 	return best1 + best2 + best3
 }
 
-const mainBudget = 50000
-
 func RunP1() {
-	fmt.Println(runP1(input, mainBudget))
+	fmt.Println(runP1(input))
 }
 
 func RunP2() {
-	fmt.Println(runP2(input, mainBudget))
+	fmt.Println(runP2(input))
 }
