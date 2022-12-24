@@ -205,7 +205,6 @@ type gridTime struct {
 
 type GridMovie struct {
 	grids map[int]*Grid
-	seen  map[string]*gridTime
 	last  int
 }
 
@@ -219,20 +218,8 @@ func (gm *GridMovie) gridFor(time int) *Grid {
 		panic(fmt.Errorf("need ascending requests: want %d, have %d", time, gm.last))
 	}
 	g := gm.grids[gm.last].next()
-	state := g.state()
-	gt, ok := gm.seen[state]
-	if ok {
-		if !printed {
-			printed = true
-			log.Println(fmt.Errorf("cycle detected at: %v and %v", gt, time))
-		}
-	}
 	gm.last = time
 	gm.grids[time] = g
-	gm.seen[state] = &gridTime{
-		time: time,
-		g:    g,
-	}
 	if gm.last%1000 == 0 {
 		fmt.Printf("G%d ...", gm.last)
 	}
@@ -270,7 +257,6 @@ func (m Move) next(gm *GridMovie, goal Point, stats *Stats) {
 	g := gm.gridFor(m.time + 1)
 	if m.point == goal {
 		if stats.bestTime > m.time {
-			log.Println("NEW BEST TIME:", m)
 			stats.bestTime = m.time
 		}
 		return
@@ -324,7 +310,6 @@ func (m Move) next(gm *GridMovie, goal Point, stats *Stats) {
 func crossOnce(g *Grid, start, goal Point, budget int) (*GridMovie, int) {
 	gm := &GridMovie{
 		grids: map[int]*Grid{0: g},
-		seen:  map[string]*gridTime{g.state(): {g: g, time: 0}},
 		last:  0,
 	}
 	s := &Stats{bestTime: budget, seenMoves: map[Move]bool{}}
