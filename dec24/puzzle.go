@@ -251,7 +251,14 @@ type Move struct {
 
 var counter int
 
-func (m Move) next(gm *GridMovie, stats *Stats) {
+func abs(x int) int {
+	if x < 0 {
+		return -x
+	}
+	return x
+}
+
+func (m Move) next(gm *GridMovie, goal Point, stats *Stats) {
 	if stats.seenMoves[m] {
 		return
 	}
@@ -261,15 +268,20 @@ func (m Move) next(gm *GridMovie, stats *Stats) {
 		fmt.Printf("M%d... ", counter/1000000)
 	}
 	g := gm.gridFor(m.time + 1)
-	if m.point == g.exit {
+	if m.point == goal {
 		if stats.bestTime > m.time {
 			log.Println("NEW BEST TIME:", m)
 			stats.bestTime = m.time
 		}
 		return
 	}
-	colDiff := g.exit.col - m.point.col
-	rowDiff := g.exit.row - m.point.row
+	movingDown := goal.row >= m.point.row && goal.col >= m.point.col
+	incr := 1
+	if !movingDown {
+		incr = -1
+	}
+	colDiff := abs(goal.col - m.point.col)
+	rowDiff := abs(goal.row - m.point.row)
 	minSteps := colDiff + rowDiff
 	if m.time+minSteps > stats.bestTime {
 		return
@@ -285,7 +297,7 @@ func (m Move) next(gm *GridMovie, stats *Stats) {
 
 	colPref := colDiff > rowDiff
 	// prefer to go right or down
-	nextRow, nextCol := Point{m.point.row + 1, m.point.col}, Point{m.point.row, m.point.col + 1}
+	nextRow, nextCol := Point{m.point.row + incr, m.point.col}, Point{m.point.row, m.point.col + incr}
 	if colPref {
 		maybeAdd(nextCol)
 		maybeAdd(nextRow)
@@ -296,7 +308,7 @@ func (m Move) next(gm *GridMovie, stats *Stats) {
 	// prefer to stay put
 	maybeAdd(m.point)
 	// backtrack if needed
-	prevRow, prevCol := Point{m.point.row - 1, m.point.col}, Point{m.point.row, m.point.col - 1}
+	prevRow, prevCol := Point{m.point.row - incr, m.point.col}, Point{m.point.row, m.point.col - incr}
 	if colPref {
 		maybeAdd(prevRow)
 		maybeAdd(prevCol)
@@ -305,27 +317,42 @@ func (m Move) next(gm *GridMovie, stats *Stats) {
 		maybeAdd(prevRow)
 	}
 	for _, c := range candidates {
-		c.next(gm, stats)
+		c.next(gm, goal, stats)
 	}
 }
 
-func runP1(in string, budget int) int {
-	log.SetFlags(0)
-	g := toGrid(in)
-	log.Println(g)
+func crossOnce(g *Grid, start, goal Point, budget int) (*GridMovie, int) {
 	gm := &GridMovie{
 		grids: map[int]*Grid{0: g},
 		seen:  map[string]*gridTime{g.state(): {g: g, time: 0}},
 		last:  0,
 	}
 	s := &Stats{bestTime: budget, seenMoves: map[Move]bool{}}
-	m := Move{point: g.entrance}
-	m.next(gm, s)
-	return s.bestTime
+	m := Move{point: start}
+	m.next(gm, goal, s)
+	return gm, s.bestTime
 }
 
-func runP2(in string) int {
-	return 9
+func runP1(in string, budget int) int {
+	log.SetFlags(0)
+	g := toGrid(in)
+	log.Println(g)
+	_, best := crossOnce(g, g.entrance, g.exit, budget)
+	return best
+}
+
+func runP2(in string, budget int) int {
+	log.SetFlags(0)
+	g := toGrid(in)
+	gm, best1 := crossOnce(g, g.entrance, g.exit, budget)
+	g = gm.gridFor(best1)
+	log.Println("B1:", best1)
+	gm, best2 := crossOnce(g, g.exit, g.entrance, budget)
+	g = gm.gridFor(best2)
+	log.Println("B2:", best2)
+	gm, best3 := crossOnce(g, g.entrance, g.exit, budget)
+	log.Println("B3:", best3)
+	return best1 + best2 + best3
 }
 
 const mainBudget = 50000
@@ -335,5 +362,5 @@ func RunP1() {
 }
 
 func RunP2() {
-	fmt.Println(runP2(input))
+	fmt.Println(runP2(input, mainBudget))
 }
