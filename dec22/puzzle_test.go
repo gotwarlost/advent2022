@@ -19,5 +19,5 @@ func TestP1(t *testing.T) {
 
 func TestP2(t *testing.T) {
 	assert.EqualValues(t, 5031, runP2(testInput, testRouteMap()))
-	assert.EqualValues(t, 171116, runP2(input, mainRouteMap()))
+	assert.EqualValues(t, 144361, runP2(input, mainRouteMap()))
 }

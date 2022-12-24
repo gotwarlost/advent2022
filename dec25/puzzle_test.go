@@ -1,4 +1,4 @@
-package dec23
+package dec25
 
 import (
 	_ "embed"
@@ -14,10 +14,10 @@ var testInput string
 
 func TestP1(t *testing.T) {
 	assert.EqualValues(t, 110, runP1(testInput))
-	assert.EqualValues(t, 3882, runP1(input))
+	// assert.EqualValues(t, 3882, runP1(input))
 }
 
 func TestP2(t *testing.T) {
-	assert.EqualValues(t, 20, runP2(testInput))
-	assert.EqualValues(t, 1116, runP2(input))
+	// assert.EqualValues(t, 20, runP2(testInput))
+	// assert.EqualValues(t, -1, runP2(input))
 }
