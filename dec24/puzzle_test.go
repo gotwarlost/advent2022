@@ -13,7 +13,7 @@ var _ = assert.Equal
 var testInput string
 
 func TestP1(t *testing.T) {
-	assert.EqualValues(t, 110, runP1(testInput))
+	assert.EqualValues(t, 18, runP1(testInput, 25))
 	// assert.EqualValues(t, 3882, runP1(input))
 }
 
