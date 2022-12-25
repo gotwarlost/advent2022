@@ -57,13 +57,9 @@ func decimalToSnafu(x int64) string {
 	return string(ret)
 }
 
-func toSnafus(in string) []string {
-	return strings.Split(strings.TrimSpace(in), "\n")
-}
-
 func runP1(in string) string {
 	total := int64(0)
-	for _, s := range toSnafus(in) {
+	for _, s := range strings.Split(strings.TrimSpace(in), "\n") {
 		total += snafuToDecimal(s)
 	}
 	return decimalToSnafu(total)
