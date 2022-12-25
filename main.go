@@ -83,7 +83,6 @@ var puzzles = map[string]puzzle{
 	"dec24-p1": dec24.RunP1,
 	"dec24-p2": dec24.RunP2,
 	"dec25-p1": dec25.RunP1,
-	"dec25-p2": dec25.RunP2,
 }
 
 func names() []string {

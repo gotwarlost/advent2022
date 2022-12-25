@@ -9,27 +9,28 @@ import (
 //go:embed input.txt
 var input string
 
+var snafu2Dec = map[byte]int64{
+	'=': -2,
+	'-': -1,
+	'0': 0,
+	'1': 1,
+	'2': 2,
+}
+
+var rem2Snafu = map[int64]byte{
+	0: '0',
+	1: '1',
+	2: '2',
+	3: '=',
+	4: '-',
+}
+
 func snafuToDecimal(s string) int64 {
 	sum := int64(0)
 	mult := int64(1)
 	for i := len(s) - 1; i >= 0; i-- {
-		x := s[i]
-		var val int
-		switch x {
-		case '=':
-			val = -2
-		case '-':
-			val = -1
-		case '0':
-			val = 0
-		case '1':
-			val = 1
-		case '2':
-			val = 2
-		default:
-			panic(fmt.Errorf("invalid SNAFU digit: %v", x))
-		}
-		sum += int64(val) * mult
+		val := snafu2Dec[s[i]]
+		sum += val * mult
 		mult *= 5
 	}
 	return sum
@@ -43,19 +44,10 @@ func decimalToSnafu(x int64) string {
 	for {
 		q := x / int64(5)
 		r := x % int64(5)
-		switch r {
-		case 0:
-			prepend('0')
-		case 1:
-			prepend('1')
-		case 2:
-			prepend('2')
-		case 3:
+		val := rem2Snafu[r]
+		prepend(val)
+		if val == '-' || val == '=' {
 			q++
-			prepend('=')
-		case 4:
-			q++
-			prepend('-')
 		}
 		x = q
 		if x == 0 {
@@ -77,14 +69,6 @@ func runP1(in string) string {
 	return decimalToSnafu(total)
 }
 
-func runP2(in string) int {
-	return 9
-}
-
 func RunP1() {
 	fmt.Println(runP1(input))
-}
-
-func RunP2() {
-	fmt.Println(runP2(input))
 }
